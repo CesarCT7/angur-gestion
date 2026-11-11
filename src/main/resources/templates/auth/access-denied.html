@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(${pageTitle})}"></head>
+<body class="login-page">
+<main class="simple-message-card">
+    <a class="setup-brand" th:href="@{/}"><span>Angur</span><small>Gestión</small></a>
+    <h1>Esta acción no está disponible para tu perfil</h1>
+    <p>Los permisos se validan también en el servidor. Si necesitas acceso, consulta con la persona administradora.</p>
+    <a class="btn btn-angur-primary" th:href="@{/}">Volver al inicio</a>
+</main>
+</body>
+</html>

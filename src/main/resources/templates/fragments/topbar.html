@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+<header th:fragment="topbar" class="topbar">
+    <div>
+        <span class="topbar-eyebrow">Angur Display</span>
+        <p class="topbar-title" th:text="${pageTitle}">Inicio</p>
+    </div>
+    <div class="topbar-user">
+        <span class="topbar-user-name" th:text="${signedInName}">Usuario</span>
+        <span class="topbar-role" th:text="${signedInRole}">Perfil</span>
+    </div>
+</header>
+</body>
+</html>

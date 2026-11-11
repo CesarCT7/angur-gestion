@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+<aside th:fragment="sidebar" class="sidebar">
+    <a class="brand-lockup" th:href="@{/}" aria-label="Angur Gestión, ir al inicio">
+        <span class="brand-name">Angur</span>
+        <span class="brand-subtitle">Gestión</span>
+        <span class="brand-caption">Control administrativo y comercial</span>
+    </a>
+
+    <nav class="primary-nav" aria-label="Navegación principal">
+        <ul class="nav flex-column gap-1">
+            <li class="nav-item">
+                <a class="nav-link" th:classappend="${activePage == 'inicio'} ? ' is-active' : ''" th:href="@{/}">
+                    <span class="nav-mark" aria-hidden="true">IN</span><span>Inicio</span>
+                </a>
+            </li>
+
+            <li class="nav-item" th:if="${signedInRoleCode != 'CLIENTE'}">
+                <a class="nav-link" th:classappend="${activePage == 'productos'} ? ' is-active' : ''" th:href="@{/productos}">
+                    <span class="nav-mark" aria-hidden="true">PR</span><span>Productos</span>
+                </a>
+            </li>
+            <li class="nav-item" th:if="${signedInRoleCode == 'ADMINISTRADOR' or signedInRoleCode == 'ENCARGADO_ALMACEN'}">
+                <span class="nav-link nav-link-future" aria-disabled="true"><span class="nav-mark" aria-hidden="true">IN</span><span>Inventario</span><span class="nav-soon">Próximamente</span></span>
+            </li>
+            <li class="nav-item" th:if="${signedInRoleCode == 'ADMINISTRADOR' or signedInRoleCode == 'VENDEDOR'}">
+                <span class="nav-link nav-link-future" aria-disabled="true"><span class="nav-mark" aria-hidden="true">CL</span><span>Clientes</span><span class="nav-soon">Próximamente</span></span>
+            </li>
+            <li class="nav-item" th:if="${signedInRoleCode == 'ADMINISTRADOR' or signedInRoleCode == 'VENDEDOR' or signedInRoleCode == 'SUPERVISOR_VENTAS' or signedInRoleCode == 'CLIENTE'}">
+                <span class="nav-link nav-link-future" aria-disabled="true"><span class="nav-mark" aria-hidden="true">CT</span><span>Cotizaciones</span><span class="nav-soon">Próximamente</span></span>
+            </li>
+            <li class="nav-item" th:if="${signedInRoleCode == 'ADMINISTRADOR' or signedInRoleCode == 'VENDEDOR' or signedInRoleCode == 'SUPERVISOR_VENTAS'}">
+                <span class="nav-link nav-link-future" aria-disabled="true"><span class="nav-mark" aria-hidden="true">VT</span><span>Ventas</span><span class="nav-soon">Próximamente</span></span>
+            </li>
+            <li class="nav-item" th:if="${signedInRoleCode == 'ADMINISTRADOR' or signedInRoleCode == 'VENDEDOR' or signedInRoleCode == 'SUPERVISOR_VENTAS' or signedInRoleCode == 'ENCARGADO_ALMACEN' or signedInRoleCode == 'CLIENTE'}">
+                <span class="nav-link nav-link-future" aria-disabled="true"><span class="nav-mark" aria-hidden="true">HI</span><span th:text="${signedInRoleCode == 'CLIENTE'} ? 'Mis compras' : 'Historial'">Historial</span><span class="nav-soon">Próximamente</span></span>
+            </li>
+            <li class="nav-item" th:if="${signedInRoleCode == 'ADMINISTRADOR' or signedInRoleCode == 'SUPERVISOR_VENTAS'}">
+                <span class="nav-link nav-link-future" aria-disabled="true"><span class="nav-mark" aria-hidden="true">RG</span><span>Reportes / Ganancias</span><span class="nav-soon">Próximamente</span></span>
+            </li>
+            <li class="nav-item" th:if="${signedInRoleCode == 'ADMINISTRADOR'}">
+                <span class="nav-link nav-link-future" aria-disabled="true"><span class="nav-mark" aria-hidden="true">US</span><span>Usuarios</span><span class="nav-soon">Próximamente</span></span>
+            </li>
+            <li class="nav-item" th:if="${signedInRoleCode == 'CLIENTE'}">
+                <span class="nav-link nav-link-future" aria-disabled="true"><span class="nav-mark" aria-hidden="true">PE</span><span>Mi perfil</span><span class="nav-soon">Próximamente</span></span>
+            </li>
+        </ul>
+    </nav>
+
+    <div class="sidebar-account">
+        <div class="account-summary">
+            <span class="account-avatar" aria-hidden="true" th:text="${#strings.substring(signedInName, 0, 1)}">A</span>
+            <span class="account-copy">
+                <strong th:text="${signedInName}">Usuario</strong>
+                <small th:text="${signedInRole}">Perfil</small>
+            </span>
+        </div>
+        <form th:action="@{/logout}" method="post">
+            <button class="logout-button" type="submit"><span aria-hidden="true">↗</span>Cerrar sesión</button>
+        </form>
+    </div>
+</aside>
+</body>
+</html>

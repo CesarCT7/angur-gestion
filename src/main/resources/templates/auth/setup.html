@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(${pageTitle})}"></head>
+<body class="login-page setup-page">
+<main class="setup-shell">
+    <section class="setup-card" aria-labelledby="setup-title">
+        <a class="setup-brand" th:href="@{/login}"><span>Angur</span><small>Gestión</small></a>
+        <span class="setup-step">CONFIGURACIÓN DE PRIMER USO</span>
+        <h1 id="setup-title">Crea la cuenta administradora</h1>
+        <p class="text-secondary">Esta opción solo está disponible mientras no existan cuentas. La contraseña se guardará protegida como hash.</p>
+
+        <div class="alert alert-warning" role="alert" th:if="${databaseError}" th:text="${databaseError}"></div>
+        <div class="alert alert-danger" role="alert" th:if="${formError}" th:text="${formError}"></div>
+        <div class="alert alert-danger" role="alert" th:if="${#fields.hasErrors('*')}">
+            Revisa los campos marcados antes de continuar.
+        </div>
+
+        <form th:action="@{/setup}" th:object="${form}" method="post" class="setup-form">
+            <fieldset th:disabled="${databaseReady != true}">
+                <div class="mb-3">
+                    <label class="form-label" for="name">Nombre</label>
+                    <input class="form-control" id="name" th:field="*{name}" autocomplete="name" required>
+                    <div class="field-error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label" for="username">Usuario</label>
+                        <input class="form-control" id="username" th:field="*{username}" autocomplete="username" required>
+                        <div class="field-error" th:if="${#fields.hasErrors('username')}" th:errors="*{username}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="email">Correo electrónico</label>
+                        <input class="form-control" id="email" th:field="*{email}" type="email" autocomplete="email" required>
+                        <div class="field-error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
+                    </div>
+                </div>
+                <div class="row g-3 mt-0">
+                    <div class="col-md-6">
+                        <label class="form-label" for="password">Contraseña</label>
+                        <input class="form-control" id="password" th:field="*{password}" type="password" autocomplete="new-password" minlength="12" maxlength="72" required>
+                        <div class="form-text">Usa entre 12 y 72 caracteres.</div>
+                        <div class="field-error" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="passwordConfirmation">Confirmar contraseña</label>
+                        <input class="form-control" id="passwordConfirmation" th:field="*{passwordConfirmation}" type="password" autocomplete="new-password" required>
+                        <div class="field-error" th:if="${#fields.hasErrors('passwordConfirmation')}" th:errors="*{passwordConfirmation}"></div>
+                    </div>
+                </div>
+                <button class="btn btn-angur-primary w-100 mt-4" type="submit">Crear administrador</button>
+            </fieldset>
+        </form>
+        <a class="back-link" th:href="@{/login}">Volver al inicio de sesión</a>
+    </section>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+        crossorigin="anonymous"></script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(${pageTitle})}"></head>
+<body class="app-page">
+<div class="app-shell">
+    <aside th:replace="~{fragments/sidebar :: sidebar}"></aside>
+    <main class="main-content">
+        <header th:replace="~{fragments/topbar :: topbar}"></header>
+        <div class="content-wrap">
+            <section class="page-heading">
+                <div><p class="eyebrow">Área del cliente</p><h1>Bienvenido, <span th:text="${signedInName}">cliente</span></h1></div>
+            </section>
+            <section class="panel-card empty-state customer-empty">
+                <span class="empty-state-mark" aria-hidden="true">AG</span>
+                <h2>Tu información se mostrará aquí</h2>
+                <p>El área privada se conectará cuando estén disponibles los módulos de cotizaciones y ventas. Tu sesión no puede consultar datos de otros clientes.</p>
+            </section>
+        </div>
+    </main>
+</div>
+</body>
+</html>

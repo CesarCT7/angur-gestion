@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(${pageTitle})}"></head>
+<body class="app-page">
+<div class="app-shell">
+    <aside th:replace="~{fragments/sidebar :: sidebar}"></aside>
+    <main class="main-content">
+        <header th:replace="~{fragments/topbar :: topbar}"></header>
+        <div class="content-wrap">
+            <section class="page-heading">
+                <div>
+                    <p class="eyebrow">Resumen</p>
+                    <h1>Inicio</h1>
+                    <p class="page-subtitle">Consulta la información que corresponde a tu perfil.</p>
+                </div>
+                <a class="btn btn-angur-primary" th:if="${signedInRoleCode != 'CLIENTE'}" th:href="@{/productos}">Ver productos</a>
+            </section>
+
+            <div class="alert alert-warning" role="alert" th:if="${databaseError}" th:text="${databaseError}"></div>
+
+            <section class="metric-grid" th:if="${summary != null}" aria-label="Indicadores">
+                <article class="metric-card">
+                    <p>Productos activos</p>
+                    <strong th:text="${#numbers.formatInteger(summary.activeProducts, 1, 'COMMA')}">0</strong>
+                    <span class="metric-accent" aria-hidden="true"></span>
+                </article>
+                <article class="metric-card">
+                    <p>Existencias actuales</p>
+                    <strong th:text="${#numbers.formatInteger(summary.unitsInStock, 1, 'COMMA')}">0</strong>
+                    <span class="metric-accent" aria-hidden="true"></span>
+                </article>
+                <article class="metric-card" th:if="${showFinancials}">
+                    <p>Ventas registradas</p>
+                    <strong th:text="${#numbers.formatInteger(summary.registeredSales, 1, 'COMMA')}">0</strong>
+                    <span class="metric-accent" aria-hidden="true"></span>
+                </article>
+                <article class="metric-card" th:if="${showFinancials}">
+                    <p>Ingresos históricos</p>
+                    <strong th:text="${'$' + #numbers.formatDecimal(summary.revenue, 1, 'COMMA', 2, 'POINT')}">$0.00</strong>
+                    <span class="metric-accent" aria-hidden="true"></span>
+                </article>
+                <article class="metric-card" th:if="${showFinancials}">
+                    <p>Costos históricos</p>
+                    <strong th:text="${'$' + #numbers.formatDecimal(summary.cost, 1, 'COMMA', 2, 'POINT')}">$0.00</strong>
+                    <span class="metric-accent" aria-hidden="true"></span>
+                </article>
+                <article class="metric-card metric-card-highlight" th:if="${showFinancials}">
+                    <p>Ganancia bruta histórica</p>
+                    <strong th:text="${'$' + #numbers.formatDecimal(summary.grossProfit, 1, 'COMMA', 2, 'POINT')}">$0.00</strong>
+                    <small>Calculada desde los costos y precios guardados en cada venta.</small>
+                </article>
+            </section>
+
+            <section class="panel-card" th:if="${showMovements and summary != null}" aria-labelledby="movement-title">
+                <div class="panel-heading">
+                    <div>
+                        <p class="eyebrow">Inventario</p>
+                        <h2 id="movement-title">Movimientos recientes</h2>
+                    </div>
+                    <span class="muted-note" th:text="${#lists.size(summary.recentMovements) + ' movimientos'}"></span>
+                </div>
+                <div class="table-responsive" th:if="${!summary.recentMovements.isEmpty()}">
+                    <table class="table align-middle data-table">
+                        <caption class="visually-hidden">Últimos movimientos de inventario</caption>
+                        <thead><tr><th scope="col">Fecha</th><th scope="col">Producto</th><th scope="col">Tipo</th><th scope="col">Cantidad</th><th scope="col">Motivo</th><th scope="col">Usuario</th></tr></thead>
+                        <tbody>
+                        <tr th:each="movement : ${summary.recentMovements}">
+                            <td th:text="${movement.dateLabel}">—</td>
+                            <td><strong th:text="${movement.productCode}">—</strong><span class="table-secondary-line" th:text="${movement.productName}">—</span></td>
+                            <td><span class="status-pill" th:classappend="${movement.type == 'ENTRADA'} ? ' status-available' : ' status-empty'" th:text="${movement.type}">ENTRADA</span></td>
+                            <td th:text="${movement.quantity}">0</td>
+                            <td th:text="${movement.reason}">—</td>
+                            <td th:text="${movement.userName}">—</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="empty-state" th:if="${summary.recentMovements.isEmpty()}">
+                    <span class="empty-state-mark" aria-hidden="true">—</span>
+                    <h3>Aún no hay movimientos</h3>
+                    <p>Cuando se registren entradas o salidas, aparecerán en esta lista.</p>
+                </div>
+            </section>
+
+            <section class="welcome-panel" th:if="${summary != null}">
+                <div class="welcome-copy">
+                    <p class="eyebrow">Angur Display</p>
+                    <h2>Un solo lugar para organizar la operación.</h2>
+                    <p>El catálogo ya está listo para empezar. Los módulos de inventario, clientes, cotizaciones y ventas se incorporarán en las siguientes etapas.</p>
+                    <a class="text-link" th:href="@{/productos}">Abrir catálogo de productos <span aria-hidden="true">→</span></a>
+                </div>
+                <div class="welcome-stat" aria-hidden="true"><span>AG</span></div>
+            </section>
+        </div>
+    </main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+        crossorigin="anonymous"></script>
+</body>
+</html>
