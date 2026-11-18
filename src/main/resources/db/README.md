@@ -27,7 +27,7 @@ La base local `angur_gestion` usada por el paquete ejecutable ya tiene aplicadas
 
 ## Decisiones de negocio que siguen abiertas
 
-- Los documentos requieren que una cotización inicie como `PENDIENTE`, pero el diagrama P14 propone también `BORRADOR` y `EMITIDA`. El esquema admite ambos grupos; el flujo de transición debe confirmarse con Angur Display.
+- La implementación inicia cotizaciones en `PENDIENTE` y permite a administrador/vendedor cambiarlas a `ACEPTADA` o `RECHAZADA`. El diagrama P14 propone también `BORRADOR`, `EMITIDA`, `CANCELADA` y `CONVERTIDA_EN_VENTA`; estas transiciones aún deben confirmarse. Al registrar una venta desde una cotización aceptada, se conserva `ACEPTADA` y se asocia el folio de venta; no se cambia automáticamente a `CONVERTIDA_EN_VENTA` hasta acordar esa semántica.
 - Los documentos muestran el estado `CANCELADA` para ventas, pero no definen cómo cancelar ni si se registra un movimiento compensatorio. El esquema conserva el estado; no se debe implementar la cancelación hasta acordar esa regla.
 - Tipo y nombre/razón social son obligatorios para clientes; correo y teléfono se dejaron opcionales porque los campos restantes están pendientes de validación.
 - Los importes usan `DECIMAL(13,2)`. La moneda no se guarda por separado porque los documentos no fijan explícitamente una política de moneda.

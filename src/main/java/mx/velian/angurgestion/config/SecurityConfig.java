@@ -19,6 +19,11 @@ public class SecurityConfig {
                                 "ADMINISTRADOR", "ENCARGADO_ALMACEN")
                         .requestMatchers(HttpMethod.POST, "/productos/**").hasAnyRole(
                                 "ADMINISTRADOR", "ENCARGADO_ALMACEN")
+                        .requestMatchers(HttpMethod.POST, "/cotizaciones/**", "/ventas/**").hasAnyRole("ADMINISTRADOR", "VENDEDOR")
+                        .requestMatchers(HttpMethod.GET, "/cotizaciones/nueva", "/ventas/nueva", "/ventas/nueva/cotizacion/**")
+                                .hasAnyRole("ADMINISTRADOR", "VENDEDOR")
+                        .requestMatchers("/cotizaciones/**", "/ventas/**").hasAnyRole(
+                                "ADMINISTRADOR", "VENDEDOR", "SUPERVISOR_VENTAS", "CLIENTE")
                         .requestMatchers("/clientes/**").hasAnyRole("ADMINISTRADOR", "VENDEDOR")
                         .requestMatchers(HttpMethod.GET, "/inventario/movimiento").hasAnyRole(
                                 "ADMINISTRADOR", "ENCARGADO_ALMACEN")

@@ -28,10 +28,10 @@
                 <a class="nav-link" th:classappend="${activePage == 'clientes'} ? ' is-active' : ''" th:href="@{/clientes}"><span class="nav-mark" aria-hidden="true">CL</span><span>Clientes</span></a>
             </li>
             <li class="nav-item" th:if="${signedInRoleCode == 'ADMINISTRADOR' or signedInRoleCode == 'VENDEDOR' or signedInRoleCode == 'SUPERVISOR_VENTAS' or signedInRoleCode == 'CLIENTE'}">
-                <span class="nav-link nav-link-future" aria-disabled="true"><span class="nav-mark" aria-hidden="true">CT</span><span>Cotizaciones</span><span class="nav-soon">Próximamente</span></span>
+                <a class="nav-link" th:classappend="${activePage == 'cotizaciones'} ? ' is-active' : ''" th:href="@{/cotizaciones}"><span class="nav-mark" aria-hidden="true">CT</span><span th:text="${signedInRoleCode == 'CLIENTE'} ? 'Mis cotizaciones' : 'Cotizaciones'">Cotizaciones</span></a>
             </li>
-            <li class="nav-item" th:if="${signedInRoleCode == 'ADMINISTRADOR' or signedInRoleCode == 'VENDEDOR' or signedInRoleCode == 'SUPERVISOR_VENTAS'}">
-                <span class="nav-link nav-link-future" aria-disabled="true"><span class="nav-mark" aria-hidden="true">VT</span><span>Ventas</span><span class="nav-soon">Próximamente</span></span>
+            <li class="nav-item" th:if="${signedInRoleCode == 'ADMINISTRADOR' or signedInRoleCode == 'VENDEDOR' or signedInRoleCode == 'SUPERVISOR_VENTAS' or signedInRoleCode == 'CLIENTE'}">
+                <a class="nav-link" th:classappend="${activePage == 'ventas'} ? ' is-active' : ''" th:href="@{/ventas}"><span class="nav-mark" aria-hidden="true">VT</span><span th:text="${signedInRoleCode == 'CLIENTE'} ? 'Mis compras' : 'Ventas'">Ventas</span></a>
             </li>
             <li class="nav-item" th:if="${signedInRoleCode == 'ADMINISTRADOR' or signedInRoleCode == 'VENDEDOR' or signedInRoleCode == 'SUPERVISOR_VENTAS' or signedInRoleCode == 'ENCARGADO_ALMACEN' or signedInRoleCode == 'CLIENTE'}">
                 <span class="nav-link nav-link-future" aria-disabled="true"><span class="nav-mark" aria-hidden="true">HI</span><span th:text="${signedInRoleCode == 'CLIENTE'} ? 'Mis compras' : 'Historial'">Historial</span><span class="nav-soon">Próximamente</span></span>

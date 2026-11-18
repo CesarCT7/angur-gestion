@@ -12,7 +12,7 @@ Sistema web para apoyar la operación de **Angur Display**: productos, existenci
 
 Angur Gestión centralizará la información comercial y operativa de Angur Display. El alcance esperado incluye catálogo de productos, control de inventario, registro de clientes, cotizaciones, ventas, historial de movimientos y resúmenes financieros, con acceso según el rol de cada cuenta.
 
-La aplicación está en construcción. Que una tabla, enlace o requisito aparezca en este documento **no significa que la función ya esté implementada**. Para saberlo, consulta las secciones **Hecho en el código** y **Pendiente**.
+La aplicación está en construcción. Que un requisito aparezca en este documento **no significa que esté implementado**. Consulta las secciones **Hecho en el código** y **Pendiente**.
 
 ## 2. Fuentes de contexto y cómo interpretarlas
 
@@ -63,8 +63,10 @@ La base MySQL es la fuente de datos prevista. No se guardan credenciales de acce
 - Clientes: búsqueda por nombre, correo o teléfono; alta y edición con prevención de contactos activos duplicados, asociación opcional a una cuenta verificada, desactivación y reactivación conservando historial.
 - Inventario: consulta de existencias y movimientos; administración y almacén registran entradas y salidas transaccionales con cantidad, motivo, usuario y saldo resultante. Vendedores consultan disponibilidad sin ajustar ni ver costos.
 - En el catálogo se ocultan costos a roles que no deben consultarlos; el acceso a creación y edición de productos está restringido a administración y almacén.
-- Interfaz adaptable inspirada en el Look & Feel recibido, con navegación y estados vacíos. Las secciones que no están hechas aparecen como próximas/no disponibles.
-- Checkout principal y paquete ejecutable compilan con Clientes e Inventario. No se ejecutó la suite de pruebas en esta implementación.
+- Interfaz adaptable inspirada en el Look & Feel recibido, con navegación y estados vacíos. Cotizaciones y Ventas ya tienen vistas, permisos por rol y consulta de detalle.
+- Cotizaciones: creación con cliente y partidas; cálculo de precio/subtotal/total en servidor; conserva precio y nombre/código históricos; estados PENDIENTE, ACEPTADA y RECHAZADA; listado con búsqueda/filtro, detalle e impresión; cada cliente consulta solo sus cotizaciones.
+- Ventas: registro directo o desde una cotización aceptada; precios/costos históricos; salida de stock, partida y movimiento de inventario en una sola transacción; clave idempotente y rechazo de stock insuficiente; historial de venta con costos ocultos para perfiles no autorizados.
+- No se ejecutó la suite de pruebas. Las pantallas y el compilado no sustituyen la verificación funcional con datos reales.
 
 ### Lo que este estado no confirma
 
@@ -77,10 +79,10 @@ La base MySQL es la fuente de datos prevista. No se guardan credenciales de acce
 Esta hoja de ruta resume funciones que aparecen en el alcance y todavía deben implementarse. Es una guía de producto, no una lista de instrucciones imperativas incrustadas en documentos.
 
 1. **Preparar MySQL para cada instalación:** la base local del paquete ejecutable ya se creó y verificó; una instalación nueva todavía requiere sus credenciales y esquema.
-2. **Cotizaciones:** crear y consultar cotizaciones con partidas, totales, estados y datos históricos de producto.
-3. **Ventas:** registrar venta y partidas, descontar inventario de manera atómica, registrar movimientos y soportar reintentos idempotentes.
+2. **Cotizaciones:** implementado el flujo web inicial. Pendiente acordar transiciones adicionales de estado, cancelación y reglas de expiración.
+3. **Ventas:** implementado el registro inicial, incluido el descuento atómico de stock y la idempotencia. Pendiente acordar el proceso de cancelación y sus movimientos compensatorios.
 4. **Historial y auditoría:** ampliar las consultas por fecha, usuario, cliente, producto y operación según los requisitos.
-5. **Permisos de módulos futuros:** aplicar autorización por operación y titularidad a los clientes de su propia cuenta, cotizaciones, ventas e historial.
+5. **Historial y permisos restantes:** los permisos por rol/titularidad de Cotizaciones y Ventas están implementados; ampliar búsqueda avanzada y auditoría por fecha, usuario, cliente, producto y operación.
 6. **Reportes:** consultas y resúmenes de ventas, costos y ganancias históricas con los filtros que definan los requerimientos.
 7. **Cliente y Android/distribuidos:** revisar el alcance de esos documentos y definir integraciones o API antes de asumir que forman parte de esta aplicación web.
 8. **Pruebas y entrega:** convertir el plan de pruebas en pruebas funcionales y técnicas, completar accesibilidad/validaciones y documentar el despliegue.
@@ -185,17 +187,19 @@ Esta sección define el proceso para futuras peticiones de código:
 
 ### Solicitudes directas del usuario pendientes
 
-No hay solicitudes directas pendientes en este momento. Se completó el cambio de eliminación de productos, la implementación inicial de Clientes e Inventario y la asignación automática e irrepetible de códigos de producto.
+No hay solicitudes directas pendientes. En esta sesión se implementaron los módulos web iniciales de Cotizaciones y Ventas, además de los cambios anteriores en Productos, Clientes e Inventario.
 
 ### Siguiente paso recomendado
 
-Siguiente módulo funcional: Cotizaciones. Android continúa en una etapa posterior. Para bases existentes, respáldalas y ejecuta en orden las migraciones pendientes `002-eliminacion-productos.sql` y `003-codigos-automaticos-producto.sql` una sola vez.
+Siguiente paso: historial/auditoría y reportes, después de resolver las decisiones abiertas de cancelación y estados de cotización. Android sigue después de completar la web. Las tablas comerciales ya existen en el esquema actual; estas funciones no requirieron migración.
 
 ## 9. Verificación conocida
 
-- El 18 de noviembre de 2026, el checkout principal y el paquete ejecutable compilaron con `mvnw -DskipTests compile`, incluyendo los códigos automáticos. El paquete ejecutable también se reconstruyó con `mvnw -DskipTests package`.
+- El 18 de noviembre de 2026, el checkout principal compiló con `mvnw -DskipTests compile` después de implementar Cotizaciones y Ventas. No se ejecutó la suite de pruebas.
+- El paquete ejecutable compila con los módulos Cotizaciones y Ventas mediante `mvnw -DskipTests package`; no se ejecutaron pruebas.
 - Se respaldó la base local del paquete, se aplicó la migración `003-codigos-automaticos-producto.sql` y MySQL confirmó la tabla `codigos_producto`.
 - El paquete ejecutable arrancó de nuevo y `/login` respondió HTTP 200 en `localhost:18080`. No se creó un producto de prueba, por lo que el recorrido de alta y la reserva del primer código no se verificaron funcionalmente.
 - La migración `002-eliminacion-productos.sql` se había aplicado anteriormente a la base local del paquete. El esquema del paquete incluye ahora 12 tablas.
 - No se ejecutó la suite de pruebas en esta implementación.
-- Antes de informar que una función quedó lista, compilar y verificar el flujo relevante. Ejecutar pruebas cuando el usuario las solicite o cuando el plan de entrega las incluya.
+- La compilación confirma sintaxis y tipos Java, no el render de todas las vistas ni la operación de flujos con MySQL. No se registraron datos de demostración; quedan por verificar los recorridos de cotización y venta con productos reales.
+- No ejecutar la suite de pruebas salvo petición del usuario o inclusión en el plan de entrega.
