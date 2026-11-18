@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(${pageTitle})}"></head>
+<body class="app-page">
+<div class="app-shell">
+    <aside th:replace="~{fragments/sidebar :: sidebar}"></aside>
+    <main class="main-content">
+        <header th:replace="~{fragments/topbar :: topbar}"></header>
+        <div class="content-wrap">
+            <section class="page-heading">
+                <div><p class="eyebrow">Control de existencias</p><h1>Productos e inventario</h1><p class="page-subtitle">Consulta existencias actuales y registra movimientos con su motivo.</p></div>
+                <div class="d-flex flex-wrap gap-2" th:if="${canManageInventory}">
+                    <a class="btn btn-outline-angur" th:href="@{/inventario/movimiento(tipo='ENTRADA')}">Registrar entrada</a>
+                    <a class="btn btn-angur-primary" th:href="@{/inventario/movimiento(tipo='SALIDA')}">Registrar salida</a>
+                </div>
+            </section>
+
+            <div class="alert alert-success" role="status" th:if="${successMessage}" th:text="${successMessage}"></div>
+            <div class="alert alert-danger" role="alert" th:if="${errorMessage}" th:text="${errorMessage}"></div>
+
+            <section class="panel-card catalog-panel" aria-labelledby="stock-title">
+                <div class="panel-heading catalog-toolbar">
+                    <div><p class="eyebrow">Existencias actuales</p><h2 id="stock-title">Disponibilidad</h2></div>
+                    <form class="search-form" method="get" th:action="@{/inventario}" role="search">
+                        <label class="visually-hidden" for="search-inventory">Buscar producto</label>
+                        <input class="form-control" id="search-inventory" name="q" th:value="${search}" type="search" placeholder="Código o nombre">
+                        <button class="btn btn-outline-angur" type="submit">Buscar</button>
+                    </form>
+                </div>
+                <div class="table-responsive" th:if="${!items.isEmpty()}">
+                    <table class="table align-middle data-table product-table">
+                        <caption class="visually-hidden">Productos y existencias actuales</caption>
+                        <thead><tr><th scope="col">Código</th><th scope="col">Nombre</th><th scope="col" th:if="${canViewCost}">Costo</th><th scope="col" th:if="${canViewCost}">Precio de venta</th><th scope="col">Existencia</th><th scope="col">Estado</th></tr></thead>
+                        <tbody>
+                        <tr th:each="item : ${items}">
+                            <td><span class="code-label" th:text="${item.code}">SKU</span></td>
+                            <td><strong th:text="${item.name}">Producto</strong></td>
+                            <td th:if="${canViewCost}" th:text="${'$' + #numbers.formatDecimal(item.cost, 1, 'COMMA', 2, 'POINT')}">$0.00</td>
+                            <td th:if="${canViewCost}" th:text="${'$' + #numbers.formatDecimal(item.salePrice, 1, 'COMMA', 2, 'POINT')}">$0.00</td>
+                            <td th:text="${#numbers.formatInteger(item.stock, 1, 'COMMA')}">0</td>
+                            <td><span class="status-pill" th:classappend="${item.stock > 0} ? ' status-available' : ' status-empty'" th:text="${item.availabilityLabel}">Disponible</span></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="empty-state" th:if="${items.isEmpty()}">
+                    <span class="empty-state-mark" aria-hidden="true">IN</span>
+                    <h3 th:text="${search == null or search.isBlank()} ? 'No hay productos activos' : 'No encontramos coincidencias'">No hay productos activos</h3>
+                    <p th:text="${search == null or search.isBlank()} ? 'Registra productos para comenzar a controlar existencias.' : 'Prueba con otro código o nombre.'">Registra productos para comenzar a controlar existencias.</p>
+                    <a class="btn btn-outline-angur" th:if="${canManageInventory and (search == null or search.isBlank())}" th:href="@{/productos/nuevo}">Registrar producto</a>
+                </div>
+            </section>
+
+            <section class="panel-card catalog-panel inventory-history-panel" th:if="${canManageInventory}">
+                <div class="panel-heading"><div><p class="eyebrow">Trazabilidad</p><h2>Movimientos recientes</h2><p class="panel-description">Se muestran hasta 100 operaciones, de la más nueva a la más antigua.</p></div></div>
+                <div class="table-responsive" th:if="${!movements.isEmpty()}">
+                    <table class="table align-middle data-table movement-table">
+                        <caption class="visually-hidden">Movimientos recientes de inventario</caption>
+                        <thead><tr><th scope="col">Fecha</th><th scope="col">Producto</th><th scope="col">Tipo</th><th scope="col">Cantidad</th><th scope="col">Existencia resultante</th><th scope="col">Motivo</th><th scope="col">Usuario</th></tr></thead>
+                        <tbody><tr th:each="movement : ${movements}">
+                            <td th:text="${movement.date}">Fecha</td>
+                            <td><span class="code-label" th:text="${movement.code}">SKU</span><span class="table-secondary-line" th:text="${movement.productName}">Producto</span></td>
+                            <td><span class="status-pill" th:classappend="${movement.type.name() == 'ENTRADA'} ? ' status-available' : ' status-pending'" th:text="${movement.type.label}">Entrada</span></td>
+                            <td th:text="${movement.quantity}">0</td>
+                            <td th:text="${movement.resultingStock}">0</td>
+                            <td th:text="${movement.reason}">Motivo</td>
+                            <td th:text="${movement.userName}">Usuario</td>
+                        </tr></tbody>
+                    </table>
+                </div>
+                <div class="empty-state compact-empty" th:if="${movements.isEmpty()}"><h3>Aún no hay movimientos</h3><p>Las entradas y salidas que registres aparecerán aquí.</p></div>
+            </section>
+        </div>
+    </main>
+</div>
+<script th:src="@{/vendor/bootstrap/bootstrap.bundle.min.js}" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+</body>
+</html>

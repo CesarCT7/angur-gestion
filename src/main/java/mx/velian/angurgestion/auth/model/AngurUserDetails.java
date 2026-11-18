@@ -14,6 +14,10 @@ public final class AngurUserDetails implements UserDetails {
         this.account = account;
     }
 
+    public long getId() {
+        return account.id();
+    }
+
     public String getDisplayName() {
         return account.name();
     }

@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(${pageTitle})}"></head>
+<body class="app-page">
+<div class="app-shell">
+    <aside th:replace="~{fragments/sidebar :: sidebar}"></aside>
+    <main class="main-content">
+        <header th:replace="~{fragments/topbar :: topbar}"></header>
+        <div class="content-wrap form-content">
+            <section class="page-heading">
+                <div><p class="eyebrow">Control de existencias</p><h1>Registrar movimiento</h1><p class="page-subtitle">Cada operación guarda la persona responsable, fecha, saldo y motivo.</p></div>
+                <a class="btn btn-outline-angur" th:href="@{/inventario}">Volver al inventario</a>
+            </section>
+            <div class="alert alert-danger" role="alert" th:if="${databaseError}" th:text="${databaseError}"></div>
+
+            <section class="panel-card product-form-panel">
+                <form th:action="${formAction}" th:object="${form}" method="post" novalidate>
+                    <div class="alert alert-danger" role="alert" th:if="${#fields.hasErrors('*')}">Revisa los campos marcados antes de continuar.</div>
+                    <input type="hidden" th:field="*{operationKey}">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label class="form-label" for="type">Tipo de movimiento <span class="required-mark">*</span></label>
+                            <select class="form-select" id="type" th:field="*{type}" required>
+                                <option value="">Selecciona entrada o salida</option>
+                                <option th:each="type : ${T(mx.velian.angurgestion.inventory.model.MovementType).values()}" th:value="${type}" th:text="${type.label}">Entrada</option>
+                            </select>
+                            <div class="field-error" th:if="${#fields.hasErrors('type')}" th:errors="*{type}"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="productId">Producto <span class="required-mark">*</span></label>
+                            <select class="form-select" id="productId" th:field="*{productId}" required>
+                                <option value="">Selecciona un producto</option>
+                                <option th:each="item : ${items}" th:value="${item.id}" th:text="${item.code + ' · ' + item.name + ' · Existencia: ' + item.stock}">SKU · Producto · Existencia: 0</option>
+                            </select>
+                            <div class="field-error" th:if="${#fields.hasErrors('productId')}" th:errors="*{productId}"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="quantity">Cantidad <span class="required-mark">*</span></label>
+                            <input class="form-control" id="quantity" th:field="*{quantity}" type="number" min="1" max="4294967295" step="1" inputmode="numeric" required>
+                            <div class="form-text">La cantidad debe ser un entero positivo; la salida no puede superar la existencia.</div>
+                            <div class="field-error" th:if="${#fields.hasErrors('quantity')}" th:errors="*{quantity}"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="reason">Motivo <span class="required-mark">*</span></label>
+                            <input class="form-control" id="reason" th:field="*{reason}" maxlength="255" required placeholder="Compra, devolución, ajuste...">
+                            <div class="field-error" th:if="${#fields.hasErrors('reason')}" th:errors="*{reason}"></div>
+                        </div>
+                    </div>
+                    <div class="form-info-note"><strong>Registro:</strong> la fecha y el usuario responsable se asignan automáticamente al guardar. Si vuelves a enviar el mismo formulario, el inventario no se actualizará dos veces.</div>
+                    <div class="form-actions">
+                        <a class="btn btn-outline-angur" th:href="@{/inventario}">Cancelar</a>
+                        <button class="btn btn-angur-primary" type="submit">Guardar movimiento</button>
+                    </div>
+                </form>
+            </section>
+        </div>
+    </main>
+</div>
+<script th:src="@{/vendor/bootstrap/bootstrap.bundle.min.js}" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+</body>
+</html>

@@ -58,10 +58,12 @@ La base MySQL es la fuente de datos prevista. No se guardan credenciales de acce
 - Roles reconocidos por el modelo: ADMINISTRADOR, VENDEDOR, CLIENTE, SUPERVISOR_VENTAS y ENCARGADO_ALMACEN.
 - Panel inicial con resumen de productos, existencias, ventas e información reciente disponible. La pantalla del cliente sigue siendo provisional.
 - Catálogo de productos: consultar, buscar, crear y editar. Los productos sin historial ni existencia se eliminan físicamente; los que tienen historial o existencia se archivan y pueden restaurarse o eliminarse definitivamente sin perder partidas ni movimientos históricos.
-- Un producto nuevo crea su registro de existencia con cantidad cero. El catálogo no permite ajustar existencias.
+- Un producto nuevo crea su registro de existencia con cantidad cero. Las entradas y salidas se registran desde Inventario, no desde el catálogo.
+- Clientes: búsqueda por nombre, correo o teléfono; alta y edición con prevención de contactos activos duplicados, asociación opcional a una cuenta verificada, desactivación y reactivación conservando historial.
+- Inventario: consulta de existencias y movimientos; administración y almacén registran entradas y salidas transaccionales con cantidad, motivo, usuario y saldo resultante. Vendedores consultan disponibilidad sin ajustar ni ver costos.
 - En el catálogo se ocultan costos a roles que no deben consultarlos; el acceso a creación y edición de productos está restringido a administración y almacén.
 - Interfaz adaptable inspirada en el Look & Feel recibido, con navegación y estados vacíos. Las secciones que no están hechas aparecen como próximas/no disponibles.
-- Compilación Maven reportada como correcta en la primera etapa. No se ejecutó la suite de pruebas.
+- Checkout principal y paquete ejecutable compilan con Clientes e Inventario. No se ejecutó la suite de pruebas en esta implementación.
 
 ### Lo que este estado no confirma
 
@@ -74,15 +76,13 @@ La base MySQL es la fuente de datos prevista. No se guardan credenciales de acce
 Esta hoja de ruta resume funciones que aparecen en el alcance y todavía deben implementarse. Es una guía de producto, no una lista de instrucciones imperativas incrustadas en documentos.
 
 1. **Preparar MySQL para cada instalación:** la base local del paquete ejecutable ya se creó y verificó; una instalación nueva todavía requiere sus credenciales y esquema.
-2. **Clientes:** altas, edición, búsqueda, consulta, activación/desactivación y, si corresponde, vinculación con una cuenta de cliente.
-3. **Inventario:** entradas y salidas con motivo, usuario responsable, existencia resultante e historial. Validar stock no negativo y registrar cada cambio en una transacción.
-4. **Cotizaciones:** crear y consultar cotizaciones con partidas, totales, estados y datos históricos de producto.
-5. **Ventas:** registrar venta y partidas, actualizar stock de manera atómica, registrar movimientos y soportar reintentos idempotentes.
-6. **Historial y auditoría:** conservar los registros necesarios y ofrecer consultas por fecha, usuario, cliente, producto y operación según los requisitos.
-7. **Permisos de los módulos de negocio:** aplicar autorización por operación y titularidad de datos en clientes, cotizaciones, ventas e historial al desarrollar esos módulos. La administración básica de cuentas y perfiles está implementada en el paquete actualizado.
-8. **Reportes:** consultas y resúmenes de ventas, costos y ganancias históricas con los filtros que definan los requerimientos.
-9. **Cliente y Android/distribuidos:** revisar el alcance de esos documentos y definir integraciones o API antes de asumir que forman parte de esta aplicación web.
-10. **Pruebas y entrega:** convertir el plan de pruebas en pruebas funcionales y técnicas, completar accesibilidad/validaciones y documentar el despliegue.
+2. **Cotizaciones:** crear y consultar cotizaciones con partidas, totales, estados y datos históricos de producto.
+3. **Ventas:** registrar venta y partidas, descontar inventario de manera atómica, registrar movimientos y soportar reintentos idempotentes.
+4. **Historial y auditoría:** ampliar las consultas por fecha, usuario, cliente, producto y operación según los requisitos.
+5. **Permisos de módulos futuros:** aplicar autorización por operación y titularidad a los clientes de su propia cuenta, cotizaciones, ventas e historial.
+6. **Reportes:** consultas y resúmenes de ventas, costos y ganancias históricas con los filtros que definan los requerimientos.
+7. **Cliente y Android/distribuidos:** revisar el alcance de esos documentos y definir integraciones o API antes de asumir que forman parte de esta aplicación web.
+8. **Pruebas y entrega:** convertir el plan de pruebas en pruebas funcionales y técnicas, completar accesibilidad/validaciones y documentar el despliegue.
 
 ### Reglas de negocio que deben conservarse al implementar
 
@@ -144,6 +144,8 @@ Después abre:
 - http://localhost:8080/setup — crear la primera cuenta administradora, una sola vez y con la base disponible.
 - http://localhost:8080/ — panel; requiere iniciar sesión.
 - http://localhost:8080/productos — catálogo; requiere el rol autorizado.
+- http://localhost:8080/clientes — gestión de clientes; administrador y vendedor.
+- http://localhost:8080/inventario — existencias; administrador, vendedor y encargado de almacén.
 
 Para detener el servidor, usa Ctrl+C en la terminal donde ejecutaste Maven. Si Maven no puede descargar dependencias, revisa la conexión y vuelve a ejecutar el comando.
 
@@ -152,8 +154,10 @@ Para detener el servidor, usa Ctrl+C en la terminal donde ejecutaste Maven. Si M
 ~~~text
 src/main/java/mx/velian/angurgestion/
 ├── auth/          # acceso, cuentas, roles y configuración del primer administrador
+├── client/        # clientes y asociación opcional con cuenta
 ├── config/        # configuración de Spring Security
 ├── dashboard/     # resumen principal
+├── inventory/     # existencias y movimientos transaccionales
 ├── product/       # catálogo y persistencia JDBC de productos
 └── shared/        # componentes compartidos de MVC
 
@@ -180,16 +184,17 @@ Esta sección define el proceso para futuras peticiones de código:
 
 ### Solicitudes directas del usuario pendientes
 
-No hay solicitudes directas pendientes en este momento. La petición de eliminación de productos se completó en este checkout y en el paquete ejecutable: los archivados no aparecen en el catálogo normal; el archivo permite restaurarlos o eliminarlos definitivamente conservando sus datos históricos.
+No hay solicitudes directas pendientes en este momento. Se completó el cambio de eliminación de productos y la implementación inicial de Clientes e Inventario.
 
 ### Siguiente paso recomendado
 
-Siguiente trabajo funcional: clientes e inventario. Android continúa en una etapa posterior. Antes de usar el cambio en una base existente, respáldala y ejecuta `src/main/resources/db/migrations/002-eliminacion-productos.sql` una sola vez.
+Siguiente módulo funcional: Cotizaciones. Android continúa en una etapa posterior. Antes de usar el cambio de eliminación en una base existente, respáldala y ejecuta `src/main/resources/db/migrations/002-eliminacion-productos.sql` una sola vez.
 
 ## 9. Verificación conocida
 
-- Último estado de compilación conocido: .\mvnw.cmd -DskipTests compile terminó correctamente.
-- El 18 de noviembre de 2026, el paquete ejecutable y este checkout compilaron correctamente con `mvnw -DskipTests compile`. La migración `002-eliminacion-productos.sql` también se aplicó a la base local del paquete después de crear un respaldo.
+- El 18 de noviembre de 2026, el checkout principal y el paquete ejecutable compilaron correctamente con `mvnw -DskipTests compile`, incluyendo Clientes e Inventario. El paquete ejecutable también se reconstruyó con `mvnw -DskipTests package`.
+- El paquete ejecutable arrancó de nuevo en Windows; `/login` respondió HTTP 200 en `localhost:18080`. Este chequeo no recorre los módulos detrás de autenticación ni confirma transacciones MySQL para inventario.
+- La migración `002-eliminacion-productos.sql` se aplicó anteriormente a la base local del paquete después de crear un respaldo.
 - El paquete ejecutable de Descargas inició en Windows el 18 de noviembre de 2026; se aplicó el esquema MySQL, se comprobaron sus 11 tablas y el login respondió HTTP 200 en localhost:18080. Esto no verifica ni sustituye el código de este checkout.
-- No se ejecutó la suite de pruebas de este checkout.
+- No se ejecutó la suite de pruebas en esta implementación.
 - Antes de informar que una función quedó lista, compilar y verificar el flujo relevante. Ejecutar pruebas cuando el usuario las solicite o cuando el plan de entrega las incluya.

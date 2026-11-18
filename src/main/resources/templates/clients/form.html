@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(${pageTitle})}"></head>
+<body class="app-page">
+<div class="app-shell">
+    <aside th:replace="~{fragments/sidebar :: sidebar}"></aside>
+    <main class="main-content">
+        <header th:replace="~{fragments/topbar :: topbar}"></header>
+        <div class="content-wrap form-content">
+            <section class="page-heading">
+                <div><p class="eyebrow">Relación comercial</p><h1 th:text="${formTitle}">Cliente</h1><p class="page-subtitle">Los campos marcados son obligatorios.</p></div>
+                <a class="btn btn-outline-angur" th:href="@{/clientes}">Volver a clientes</a>
+            </section>
+            <div class="alert alert-danger" role="alert" th:if="${databaseError}" th:text="${databaseError}"></div>
+
+            <section class="panel-card product-form-panel">
+                <form th:action="${formAction}" th:object="${form}" method="post" novalidate>
+                    <div class="alert alert-danger" role="alert" th:if="${#fields.hasErrors('*')}">
+                        <span th:if="${#fields.hasGlobalErrors()}" th:each="error : ${#fields.globalErrors()}" th:text="${error}">Revisa los datos antes de continuar.</span>
+                        <span th:unless="${#fields.hasGlobalErrors()}">Revisa los campos marcados antes de continuar.</span>
+                    </div>
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label class="form-label" for="type">Tipo de cliente <span class="required-mark">*</span></label>
+                            <select class="form-select" id="type" th:field="*{type}" required>
+                                <option value="">Selecciona el tipo</option>
+                                <option th:each="type : ${T(mx.velian.angurgestion.client.model.ClientType).values()}" th:value="${type}" th:text="${type.label}">Persona física</option>
+                            </select>
+                            <div class="field-error" th:if="${#fields.hasErrors('type')}" th:errors="*{type}"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="name">Nombre / Razón social <span class="required-mark">*</span></label>
+                            <input class="form-control" id="name" th:field="*{name}" maxlength="180" required autocomplete="name">
+                            <div class="field-error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="phone">Teléfono</label>
+                            <input class="form-control" id="phone" th:field="*{phone}" maxlength="30" type="tel" autocomplete="tel">
+                            <div class="field-error" th:if="${#fields.hasErrors('phone')}" th:errors="*{phone}"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="email">Correo</label>
+                            <input class="form-control" id="email" th:field="*{email}" maxlength="254" type="email" autocomplete="email">
+                            <div class="field-error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label" for="accountId">Cuenta de cliente vinculada</label>
+                            <select class="form-select" id="accountId" th:field="*{accountId}">
+                                <option value="">Sin cuenta de acceso</option>
+                                <option th:each="account : ${accounts}" th:value="${account.id}" th:text="${account.label}">Cuenta verificada</option>
+                            </select>
+                            <div class="form-text">Solo se muestran cuentas CLIENTE verificadas y que no estén asociadas con otro registro.</div>
+                            <div class="field-error" th:if="${#fields.hasErrors('accountId')}" th:errors="*{accountId}"></div>
+                        </div>
+                    </div>
+                    <div class="form-info-note"><strong>Historial:</strong> desactivar al cliente conserva las cotizaciones y ventas relacionadas.</div>
+                    <div class="form-actions">
+                        <a class="btn btn-outline-angur" th:href="@{/clientes}">Cancelar</a>
+                        <button class="btn btn-angur-primary" type="submit">Guardar cliente</button>
+                    </div>
+                </form>
+            </section>
+        </div>
+    </main>
+</div>
+<script th:src="@{/vendor/bootstrap/bootstrap.bundle.min.js}" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+</body>
+</html>

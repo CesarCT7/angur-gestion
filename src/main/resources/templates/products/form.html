@@ -12,10 +12,10 @@
                 <a class="btn btn-outline-angur" th:href="@{/productos}">Volver al catálogo</a>
             </section>
             <div class="alert alert-danger" role="alert" th:if="${databaseError}" th:text="${databaseError}"></div>
-            <div class="alert alert-danger" role="alert" th:if="${#fields.hasErrors('*')}">Revisa los datos marcados antes de guardar.</div>
+
 
             <section class="panel-card product-form-panel">
-                <form th:action="${formAction}" th:object="${form}" method="post" novalidate>
+                <form th:action="${formAction}" th:object="${form}" method="post" novalidate><div class="alert alert-danger" role="alert" th:if="${#fields.hasErrors('*')}">Revisa los campos marcados antes de continuar.</div>
                     <div class="row g-4">
                         <div class="col-md-6">
                             <label class="form-label" for="code">Código <span class="required-mark">*</span></label>
@@ -44,7 +44,7 @@
                             <div class="field-error" th:if="${#fields.hasErrors('salePrice')}" th:errors="*{salePrice}"></div>
                         </div>
                     </div>
-                    <div class="form-info-note"><strong>Existencias:</strong> este formulario no cambia el inventario. Registra entradas o salidas desde el módulo de inventario cuando esté disponible.</div>
+                    <div class="form-info-note"><strong>Existencias:</strong> este formulario no cambia el inventario. Registra entradas o salidas desde el módulo de inventario.</div>
                     <div class="form-actions">
                         <a class="btn btn-outline-angur" th:href="@{/productos}">Cancelar</a>
                         <button class="btn btn-angur-primary" type="submit">Guardar producto</button>
@@ -54,7 +54,7 @@
         </div>
     </main>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+<script th:src="@{/vendor/bootstrap/bootstrap.bundle.min.js}"
         integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
         crossorigin="anonymous"></script>
 </body>

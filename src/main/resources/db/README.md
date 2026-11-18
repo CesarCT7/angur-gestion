@@ -16,8 +16,8 @@ No se agregan usuarios iniciales ni datos ficticios. Las contraseñas deben inse
 - `usuarios.rol` contempla administrador, vendedor, cliente, supervisor de ventas y encargado de almacén.
 - Clientes y usuarios conservan desactivación lógica. Los productos sin historial se borran físicamente; los productos con historial se archivan, pueden restaurarse y también eliminarse definitivamente.
 - Cada cotización guarda el nombre, código y precio de sus partidas. Cada venta conserva además el costo unitario histórico para calcular la ganancia bruta.
-- `existencias` no admite cantidades negativas. Las salidas deben bloquear la fila de existencia y actualizar saldo e historial dentro de una transacción.
-- Ventas y movimientos guardan claves de operación para reconocer reintentos. El servicio debe devolver el resultado previo cuando la clave ya se procesó.
+- `existencias` no admite cantidades negativas. El servicio de inventario bloquea la fila de existencia y actualiza saldo e historial dentro de una transacción.
+- Los movimientos usan una clave de operación para reconocer reintentos y devolver el resultado anterior sin volver a cambiar el saldo.
 - Las partidas de ventas y cotizaciones conservan instantáneas de código, nombre, precio y costo. Al eliminar definitivamente un producto, su referencia queda en `NULL` y la instantánea permanece.
 - Los movimientos guardan instantáneas de código y nombre; eliminar un producto no borra los movimientos.
 - Para bases existentes, respalda y ejecuta una sola vez [`migrations/002-eliminacion-productos.sql`](migrations/002-eliminacion-productos.sql).

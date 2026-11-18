@@ -731,6 +731,11 @@ select:focus-visible {
     color: #b83e45;
 }
 
+.status-pending {
+    background: #fff3e5;
+    color: #9a6b2f;
+}
+
 .status-inactive {
     background: #ecefed;
     color: #5f6b6d;
@@ -742,6 +747,25 @@ select:focus-visible {
     font-size: 0.78rem;
     font-weight: 650;
 }
+
+.client-type-pill {
+    display: inline-flex;
+    align-items: center;
+    min-height: 26px;
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #e8f0ed;
+    color: #486765;
+    font-size: 0.72rem;
+    font-weight: 650;
+    white-space: nowrap;
+}
+
+.client-table { min-width: 790px; }
+.movement-table { min-width: 970px; }
+.inventory-history-panel { margin-top: 22px; }
+.panel-description { margin: 5px 0 0; color: var(--angur-muted); font-size: 0.8rem; }
+.compact-empty { padding: 20px 10px 8px; }
 
 .actions-cell {
     display: flex;
@@ -1108,3 +1132,14 @@ select:focus-visible {
         transition-duration: 0.01ms !important;
     }
 }
+
+/* Acceso: controles consistentes sin depender de recursos externos. */
+.auth-narrow { max-width: 620px; }
+.auth-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 20px; margin-top: 24px; font-size: .84rem; }
+.auth-links a { font-weight: 650; }
+.password-control { position: relative; }
+.password-control .form-control { padding-right: 88px; }
+.password-toggle { position: absolute; right: 9px; top: 50%; transform: translateY(-50%); border: 0; border-radius: 5px; padding: 6px; background: #f0f5f3; color: var(--angur-ink); font-size: .8rem; font-weight: 650; }
+.password-control .is-invalid { background-image: none; }
+.setup-card .form-select { min-height: 46px; border-color: #dce2df; }
+@media (max-width: 480px) { .auth-links { align-items: center; flex-direction: column; } }

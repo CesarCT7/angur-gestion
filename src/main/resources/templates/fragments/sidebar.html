@@ -21,11 +21,11 @@
                     <span class="nav-mark" aria-hidden="true">PR</span><span>Productos</span>
                 </a>
             </li>
-            <li class="nav-item" th:if="${signedInRoleCode == 'ADMINISTRADOR' or signedInRoleCode == 'ENCARGADO_ALMACEN'}">
-                <span class="nav-link nav-link-future" aria-disabled="true"><span class="nav-mark" aria-hidden="true">IN</span><span>Inventario</span><span class="nav-soon">Próximamente</span></span>
+            <li class="nav-item" th:if="${signedInRoleCode == 'ADMINISTRADOR' or signedInRoleCode == 'VENDEDOR' or signedInRoleCode == 'ENCARGADO_ALMACEN'}">
+                <a class="nav-link" th:classappend="${activePage == 'inventario'} ? ' is-active' : ''" th:href="@{/inventario}"><span class="nav-mark" aria-hidden="true">IN</span><span>Inventario</span></a>
             </li>
             <li class="nav-item" th:if="${signedInRoleCode == 'ADMINISTRADOR' or signedInRoleCode == 'VENDEDOR'}">
-                <span class="nav-link nav-link-future" aria-disabled="true"><span class="nav-mark" aria-hidden="true">CL</span><span>Clientes</span><span class="nav-soon">Próximamente</span></span>
+                <a class="nav-link" th:classappend="${activePage == 'clientes'} ? ' is-active' : ''" th:href="@{/clientes}"><span class="nav-mark" aria-hidden="true">CL</span><span>Clientes</span></a>
             </li>
             <li class="nav-item" th:if="${signedInRoleCode == 'ADMINISTRADOR' or signedInRoleCode == 'VENDEDOR' or signedInRoleCode == 'SUPERVISOR_VENTAS' or signedInRoleCode == 'CLIENTE'}">
                 <span class="nav-link nav-link-future" aria-disabled="true"><span class="nav-mark" aria-hidden="true">CT</span><span>Cotizaciones</span><span class="nav-soon">Próximamente</span></span>
@@ -40,7 +40,7 @@
                 <span class="nav-link nav-link-future" aria-disabled="true"><span class="nav-mark" aria-hidden="true">RG</span><span>Reportes / Ganancias</span><span class="nav-soon">Próximamente</span></span>
             </li>
             <li class="nav-item" th:if="${signedInRoleCode == 'ADMINISTRADOR'}">
-                <span class="nav-link nav-link-future" aria-disabled="true"><span class="nav-mark" aria-hidden="true">US</span><span>Usuarios</span><span class="nav-soon">Próximamente</span></span>
+                <a class="nav-link" th:classappend="${activePage == 'usuarios'} ? ' is-active' : ''" th:href="@{/usuarios}"><span class="nav-mark" aria-hidden="true">US</span><span>Usuarios</span></a>
             </li>
             <li class="nav-item" th:if="${signedInRoleCode == 'CLIENTE'}">
                 <span class="nav-link nav-link-future" aria-disabled="true"><span class="nav-mark" aria-hidden="true">PE</span><span>Mi perfil</span><span class="nav-soon">Próximamente</span></span>
