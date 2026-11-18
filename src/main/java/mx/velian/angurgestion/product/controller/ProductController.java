@@ -137,8 +137,8 @@ public class ProductController {
         try {
             boolean archived = productService.deleteOrArchive(id);
             redirectAttributes.addFlashAttribute("successMessage", archived
-                    ? "El producto se archivó porque tiene historial. Puedes restaurarlo o eliminarlo definitivamente desde Archivados."
-                    : "El producto se eliminó definitivamente porque no tiene historial.");
+                    ? "El producto se archivó porque conserva historial o existencia. Puedes restaurarlo o eliminarlo definitivamente desde Archivados."
+                    : "El producto se eliminó definitivamente porque no tiene historial ni existencia.");
         } catch (ProductNotFoundException exception) {
             redirectAttributes.addFlashAttribute("errorMessage", "No se encontró el producto o ya estaba desactivado.");
         } catch (DataAccessException exception) {

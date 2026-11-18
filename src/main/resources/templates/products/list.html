@@ -58,7 +58,7 @@
                             <td class="actions-cell" th:if="${canManageProducts}">
                                 <th:block th:if="${!archived}">
                                     <a class="btn btn-sm btn-outline-angur" th:href="@{/productos/{id}/editar(id=${product.id})}">Editar</a>
-                                    <form th:action="@{/productos/{id}/desactivar(id=${product.id})}" method="post" onsubmit="return confirm('¿Eliminar este producto? Si tiene historial se archivará; si no, se borrará definitivamente.');">
+                                    <form th:action="@{/productos/{id}/desactivar(id=${product.id})}" method="post" onsubmit="return confirm('¿Eliminar este producto? Si tiene historial o existencia, se archivará; si no, se borrará definitivamente.');">
                                         <button class="btn btn-sm btn-outline-danger-soft" type="submit">Eliminar</button>
                                     </form>
                                 </th:block>
@@ -66,7 +66,7 @@
                                     <form th:action="@{/productos/{id}/restaurar(id=${product.id})}" method="post">
                                         <button class="btn btn-sm btn-outline-angur" type="submit">Restaurar</button>
                                     </form>
-                                    <form th:action="@{/productos/{id}/eliminar-definitivamente(id=${product.id})}" method="post" onsubmit="return confirm('¿Eliminar definitivamente este producto? No podrá restaurarse. Las partidas y movimientos históricos se conservarán.');">
+                                    <form th:action="@{/productos/{id}/eliminar-definitivamente(id=${product.id})}" method="post" onsubmit="return confirm('¿Eliminar definitivamente este producto? No podrá restaurarse y se quitará su existencia actual. Las partidas y movimientos históricos se conservarán.');">
                                         <button class="btn btn-sm btn-outline-danger-soft" type="submit">Eliminar definitivamente</button>
                                     </form>
                                 </th:block>

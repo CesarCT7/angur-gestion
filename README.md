@@ -57,7 +57,7 @@ La base MySQL es la fuente de datos prevista. No se guardan credenciales de acce
 - Alta inicial de la primera cuenta administradora desde /setup; el formulario deja de crear esa cuenta después de que ya hay usuarios.
 - Roles reconocidos por el modelo: ADMINISTRADOR, VENDEDOR, CLIENTE, SUPERVISOR_VENTAS y ENCARGADO_ALMACEN.
 - Panel inicial con resumen de productos, existencias, ventas e información reciente disponible. La pantalla del cliente sigue siendo provisional.
-- Catálogo de productos: consultar, buscar, crear y editar. Los productos sin historial se eliminan físicamente; los que tienen historial se archivan y pueden restaurarse o eliminarse definitivamente sin perder partidas ni movimientos históricos.
+- Catálogo de productos: consultar, buscar, crear y editar. Los productos sin historial ni existencia se eliminan físicamente; los que tienen historial o existencia se archivan y pueden restaurarse o eliminarse definitivamente sin perder partidas ni movimientos históricos.
 - Un producto nuevo crea su registro de existencia con cantidad cero. El catálogo no permite ajustar existencias.
 - En el catálogo se ocultan costos a roles que no deben consultarlos; el acceso a creación y edición de productos está restringido a administración y almacén.
 - Interfaz adaptable inspirada en el Look & Feel recibido, con navegación y estados vacíos. Las secciones que no están hechas aparecen como próximas/no disponibles.

@@ -141,9 +141,10 @@ public class JdbcProductRepository implements ProductRepository {
                 SELECT (
                     EXISTS(SELECT 1 FROM cotizacion_partidas WHERE producto_id = ?) +
                     EXISTS(SELECT 1 FROM venta_partidas WHERE producto_id = ?) +
-                    EXISTS(SELECT 1 FROM movimientos_inventario WHERE producto_id = ?)
+                    EXISTS(SELECT 1 FROM movimientos_inventario WHERE producto_id = ?) +
+                    EXISTS(SELECT 1 FROM existencias WHERE producto_id = ? AND cantidad > 0)
                 )
-                """, Integer.class, id, id, id);
+                """, Integer.class, id, id, id, id);
         return count != null && count > 0;
     }
 
