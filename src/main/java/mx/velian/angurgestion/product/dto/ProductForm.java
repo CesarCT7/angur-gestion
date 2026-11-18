@@ -9,8 +9,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public class ProductForm {
-    @NotBlank(message = "Escribe el código del producto.")
-    @Size(max = 80, message = "El código debe tener 80 caracteres o menos.")
+    // Solo se usa para mostrar el código existente en el formulario de edición.
+    // La creación y actualización nunca aceptan este valor del navegador.
     private String code;
 
     @NotBlank(message = "Escribe el nombre del producto.")

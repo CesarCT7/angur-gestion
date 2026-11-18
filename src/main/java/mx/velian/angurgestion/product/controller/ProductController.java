@@ -19,7 +19,6 @@ import mx.velian.angurgestion.auth.model.AngurUserDetails;
 import mx.velian.angurgestion.auth.model.UserRole;
 import mx.velian.angurgestion.product.dto.ProductForm;
 import mx.velian.angurgestion.product.service.ProductService;
-import mx.velian.angurgestion.product.service.impl.DuplicateProductCodeException;
 import mx.velian.angurgestion.product.service.impl.ProductNotFoundException;
 
 @Controller
@@ -58,6 +57,7 @@ public class ProductController {
     @GetMapping("/nuevo")
     public String newProduct(Model model) {
         model.addAttribute("form", new ProductForm());
+        model.addAttribute("productCode", null);
         model.addAttribute("formTitle", "Nuevo producto");
         model.addAttribute("formAction", "/productos/nuevo");
         model.addAttribute("activePage", "productos");
@@ -76,13 +76,9 @@ public class ProductController {
             return "products/form";
         }
         try {
-            productService.create(form);
-            redirectAttributes.addFlashAttribute("successMessage", "El producto se registró con existencia inicial en cero.");
+            String code = productService.create(form);
+            redirectAttributes.addFlashAttribute("successMessage", "Producto registrado con el código " + code + " y existencia inicial en cero.");
             return "redirect:/productos";
-        } catch (DuplicateProductCodeException exception) {
-            bindingResult.rejectValue("code", "duplicate", exception.getMessage());
-            prepareForm(model, "Nuevo producto", "/productos/nuevo");
-            return "products/form";
         } catch (DataAccessException exception) {
             model.addAttribute("databaseError", "No se pudo guardar. Revisa la conexión con MySQL y vuelve a intentarlo.");
             prepareForm(model, "Nuevo producto", "/productos/nuevo");
@@ -93,7 +89,9 @@ public class ProductController {
     @GetMapping("/{id}/editar")
     public String edit(@PathVariable long id, Model model) {
         try {
-            model.addAttribute("form", productService.findForm(id));
+            ProductForm form = productService.findForm(id);
+            model.addAttribute("form", form);
+            model.addAttribute("productCode", form.getCode());
         } catch (ProductNotFoundException exception) {
             return "redirect:/productos?notFound";
         }
@@ -113,21 +111,19 @@ public class ProductController {
             RedirectAttributes redirectAttributes) {
         if (bindingResult.hasErrors()) {
             prepareForm(model, "Editar producto", "/productos/" + id + "/editar");
+            model.addAttribute("productCode", productService.findForm(id).getCode());
             return "products/form";
         }
         try {
             productService.update(id, form);
             redirectAttributes.addFlashAttribute("successMessage", "Los datos del producto se actualizaron.");
             return "redirect:/productos";
-        } catch (DuplicateProductCodeException exception) {
-            bindingResult.rejectValue("code", "duplicate", exception.getMessage());
-            prepareForm(model, "Editar producto", "/productos/" + id + "/editar");
-            return "products/form";
         } catch (ProductNotFoundException exception) {
             return "redirect:/productos?notFound";
         } catch (DataAccessException exception) {
             model.addAttribute("databaseError", "No se pudo guardar. Revisa la conexión con MySQL y vuelve a intentarlo.");
             prepareForm(model, "Editar producto", "/productos/" + id + "/editar");
+            model.addAttribute("productCode", productService.findForm(id).getCode());
             return "products/form";
         }
     }
@@ -181,6 +177,7 @@ public class ProductController {
     }
 
     private static void prepareForm(Model model, String title, String action) {
+        if (!model.containsAttribute("productCode")) model.addAttribute("productCode", null);
         model.addAttribute("formTitle", title);
         model.addAttribute("formAction", action);
         model.addAttribute("activePage", "productos");

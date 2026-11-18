@@ -2,7 +2,6 @@ package mx.velian.angurgestion.product.service.impl;
 
 import java.util.List;
 
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -58,15 +57,8 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public void create(ProductForm form) {
-        if (productRepository.existsByCode(form.getCode())) {
-            throw new DuplicateProductCodeException();
-        }
-        try {
-            productRepository.insert(form);
-        } catch (DataIntegrityViolationException exception) {
-            throw new DuplicateProductCodeException();
-        }
+    public String create(ProductForm form) {
+        return productRepository.insert(form);
     }
 
     @Override
@@ -77,15 +69,8 @@ public class ProductServiceImpl implements ProductService {
         if (!existing.active()) {
             throw new ProductNotFoundException(id);
         }
-        if (productRepository.existsByCodeExceptId(form.getCode(), id)) {
-            throw new DuplicateProductCodeException();
-        }
-        try {
-            if (productRepository.update(id, form) == 0) {
-                throw new ProductNotFoundException(id);
-            }
-        } catch (DataIntegrityViolationException exception) {
-            throw new DuplicateProductCodeException();
+        if (productRepository.update(id, form) == 0) {
+            throw new ProductNotFoundException(id);
         }
     }
 

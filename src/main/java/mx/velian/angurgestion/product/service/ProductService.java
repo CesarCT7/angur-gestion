@@ -16,7 +16,7 @@ public interface ProductService {
 
     long countActiveUnits();
 
-    void create(ProductForm form);
+    String create(ProductForm form);
 
     void update(long id, ProductForm form);
 

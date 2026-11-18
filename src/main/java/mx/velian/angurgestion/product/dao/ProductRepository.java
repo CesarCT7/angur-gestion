@@ -13,15 +13,11 @@ public interface ProductRepository {
 
     Optional<Product> findById(long id);
 
-    boolean existsByCode(String code);
-
-    boolean existsByCodeExceptId(String code, long id);
-
     long countActiveProducts();
 
     long countActiveUnits();
 
-    void insert(ProductForm form);
+    String insert(ProductForm form);
 
     int update(long id, ProductForm form);
 

@@ -69,6 +69,15 @@ CREATE TABLE productos (
     INDEX ix_productos_activo (activo)
 ) ENGINE = InnoDB;
 
+-- Reservas permanentes para que el código automático no se reutilice al borrar productos.
+CREATE TABLE codigos_producto (
+    id          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    codigo      VARCHAR(80) NULL,
+    creado_en   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    CONSTRAINT uq_codigos_producto_codigo UNIQUE (codigo)
+) ENGINE = InnoDB;
+
 CREATE TABLE existencias (
     producto_id     BIGINT UNSIGNED NOT NULL,
     cantidad        INT UNSIGNED NOT NULL DEFAULT 0,

@@ -7,7 +7,7 @@ El esquema inicial está en [`schema.sql`](schema.sql) y requiere MySQL 8.0.16 o
 1. Abre `schema.sql` en MySQL Workbench.
 2. Conéctate a tu instancia local de MySQL.
 3. Ejecuta el script completo una sola vez. Este crea y selecciona `angur_gestion`.
-4. Confirma en el panel **SCHEMAS** que aparezcan las tablas `usuarios`, `clientes`, `productos`, `existencias`, `cotizaciones`, `cotizacion_partidas`, `ventas`, `venta_partidas` y `movimientos_inventario`.
+4. Confirma en el panel **SCHEMAS** que aparezcan las tablas `usuarios`, `clientes`, `productos`, `codigos_producto`, `existencias`, `cotizaciones`, `cotizacion_partidas`, `ventas`, `venta_partidas` y `movimientos_inventario`.
 
 No se agregan usuarios iniciales ni datos ficticios. Las contraseñas deben insertarse únicamente como hashes producidos por el servicio de autenticación.
 
@@ -15,14 +15,15 @@ No se agregan usuarios iniciales ni datos ficticios. Las contraseñas deben inse
 
 - `usuarios.rol` contempla administrador, vendedor, cliente, supervisor de ventas y encargado de almacén.
 - Clientes y usuarios conservan desactivación lógica. Los productos sin historial se borran físicamente; los productos con historial se archivan, pueden restaurarse y también eliminarse definitivamente.
+- `codigos_producto` conserva permanentemente los códigos históricos. El sistema reserva un identificador secuencial y genera códigos `ANG-########`; nunca los modifica ni los reutiliza al borrar el producto.
 - Cada cotización guarda el nombre, código y precio de sus partidas. Cada venta conserva además el costo unitario histórico para calcular la ganancia bruta.
 - `existencias` no admite cantidades negativas. El servicio de inventario bloquea la fila de existencia y actualiza saldo e historial dentro de una transacción.
 - Los movimientos usan una clave de operación para reconocer reintentos y devolver el resultado anterior sin volver a cambiar el saldo.
 - Las partidas de ventas y cotizaciones conservan instantáneas de código, nombre, precio y costo. Al eliminar definitivamente un producto, su referencia queda en `NULL` y la instantánea permanece.
 - Los movimientos guardan instantáneas de código y nombre; eliminar un producto no borra los movimientos.
-- Para bases existentes, respalda y ejecuta una sola vez [`migrations/002-eliminacion-productos.sql`](migrations/002-eliminacion-productos.sql).
+- Para bases existentes, respalda y ejecuta una sola vez cada migración pendiente en orden: [`migrations/002-eliminacion-productos.sql`](migrations/002-eliminacion-productos.sql) y [`migrations/003-codigos-automaticos-producto.sql`](migrations/003-codigos-automaticos-producto.sql).
 
-La base local `angur_gestion` usada por el paquete ejecutable ya tiene aplicada esa migración; no la vuelvas a ejecutar en esa base.
+La base local `angur_gestion` usada por el paquete ejecutable ya tiene aplicadas las migraciones `002` y `003`; no las vuelvas a ejecutar ahí.
 
 ## Decisiones de negocio que siguen abiertas
 

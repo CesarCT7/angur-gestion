@@ -18,10 +18,10 @@
                 <form th:action="${formAction}" th:object="${form}" method="post" novalidate><div class="alert alert-danger" role="alert" th:if="${#fields.hasErrors('*')}">Revisa los campos marcados antes de continuar.</div>
                     <div class="row g-4">
                         <div class="col-md-6">
-                            <label class="form-label" for="code">Código <span class="required-mark">*</span></label>
-                            <input class="form-control" id="code" th:field="*{code}" maxlength="80" required aria-describedby="code-help code-error">
-                            <div class="form-text" id="code-help">Debe ser único y se conserva en el historial.</div>
-                            <div class="field-error" id="code-error" th:if="${#fields.hasErrors('code')}" th:errors="*{code}"></div>
+                            <label class="form-label" for="code">Código del producto</label>
+                            <input class="form-control" id="code" th:if="${productCode != null}" th:value="${productCode}" readonly aria-describedby="code-help">
+                            <input class="form-control" id="code" th:unless="${productCode != null}" value="Se genera al guardar" readonly aria-describedby="code-help">
+                            <div class="form-text" id="code-help">Angur Gestión lo asigna automáticamente. Es único, queda ligado al historial y no se puede modificar.</div>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label" for="name">Nombre <span class="required-mark">*</span></label>

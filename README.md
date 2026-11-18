@@ -58,6 +58,7 @@ La base MySQL es la fuente de datos prevista. No se guardan credenciales de acce
 - Roles reconocidos por el modelo: ADMINISTRADOR, VENDEDOR, CLIENTE, SUPERVISOR_VENTAS y ENCARGADO_ALMACEN.
 - Panel inicial con resumen de productos, existencias, ventas e información reciente disponible. La pantalla del cliente sigue siendo provisional.
 - Catálogo de productos: consultar, buscar, crear y editar. Los productos sin historial ni existencia se eliminan físicamente; los que tienen historial o existencia se archivan y pueden restaurarse o eliminarse definitivamente sin perder partidas ni movimientos históricos.
+- Al crear un producto, el sistema asigna un código `ANG-00000001` secuencial e inmutable. Las reservas se conservan aunque se elimine definitivamente el producto.
 - Un producto nuevo crea su registro de existencia con cantidad cero. Las entradas y salidas se registran desde Inventario, no desde el catálogo.
 - Clientes: búsqueda por nombre, correo o teléfono; alta y edición con prevención de contactos activos duplicados, asociación opcional a una cuenta verificada, desactivación y reactivación conservando historial.
 - Inventario: consulta de existencias y movimientos; administración y almacén registran entradas y salidas transaccionales con cantidad, motivo, usuario y saldo resultante. Vendedores consultan disponibilidad sin ajustar ni ver costos.
@@ -184,17 +185,17 @@ Esta sección define el proceso para futuras peticiones de código:
 
 ### Solicitudes directas del usuario pendientes
 
-No hay solicitudes directas pendientes en este momento. Se completó el cambio de eliminación de productos y la implementación inicial de Clientes e Inventario.
+No hay solicitudes directas pendientes en este momento. Se completó el cambio de eliminación de productos, la implementación inicial de Clientes e Inventario y la asignación automática e irrepetible de códigos de producto.
 
 ### Siguiente paso recomendado
 
-Siguiente módulo funcional: Cotizaciones. Android continúa en una etapa posterior. Antes de usar el cambio de eliminación en una base existente, respáldala y ejecuta `src/main/resources/db/migrations/002-eliminacion-productos.sql` una sola vez.
+Siguiente módulo funcional: Cotizaciones. Android continúa en una etapa posterior. Para bases existentes, respáldalas y ejecuta en orden las migraciones pendientes `002-eliminacion-productos.sql` y `003-codigos-automaticos-producto.sql` una sola vez.
 
 ## 9. Verificación conocida
 
-- El 18 de noviembre de 2026, el checkout principal y el paquete ejecutable compilaron correctamente con `mvnw -DskipTests compile`, incluyendo Clientes e Inventario. El paquete ejecutable también se reconstruyó con `mvnw -DskipTests package`.
-- El paquete ejecutable arrancó de nuevo en Windows; `/login` respondió HTTP 200 en `localhost:18080`. Este chequeo no recorre los módulos detrás de autenticación ni confirma transacciones MySQL para inventario.
-- La migración `002-eliminacion-productos.sql` se aplicó anteriormente a la base local del paquete después de crear un respaldo.
-- El paquete ejecutable de Descargas inició en Windows el 18 de noviembre de 2026; se aplicó el esquema MySQL, se comprobaron sus 11 tablas y el login respondió HTTP 200 en localhost:18080. Esto no verifica ni sustituye el código de este checkout.
+- El 18 de noviembre de 2026, el checkout principal y el paquete ejecutable compilaron con `mvnw -DskipTests compile`, incluyendo los códigos automáticos. El paquete ejecutable también se reconstruyó con `mvnw -DskipTests package`.
+- Se respaldó la base local del paquete, se aplicó la migración `003-codigos-automaticos-producto.sql` y MySQL confirmó la tabla `codigos_producto`.
+- El paquete ejecutable arrancó de nuevo y `/login` respondió HTTP 200 en `localhost:18080`. No se creó un producto de prueba, por lo que el recorrido de alta y la reserva del primer código no se verificaron funcionalmente.
+- La migración `002-eliminacion-productos.sql` se había aplicado anteriormente a la base local del paquete. El esquema del paquete incluye ahora 12 tablas.
 - No se ejecutó la suite de pruebas en esta implementación.
 - Antes de informar que una función quedó lista, compilar y verificar el flujo relevante. Ejecutar pruebas cuando el usuario las solicite o cuando el plan de entrega las incluya.

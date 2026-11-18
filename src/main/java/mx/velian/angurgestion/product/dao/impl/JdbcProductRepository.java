@@ -5,6 +5,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -69,22 +70,6 @@ public class JdbcProductRepository implements ProductRepository {
     }
 
     @Override
-    public boolean existsByCode(String code) {
-        Integer count = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM productos WHERE LOWER(codigo) = LOWER(?)",
-                Integer.class, code.trim());
-        return count != null && count > 0;
-    }
-
-    @Override
-    public boolean existsByCodeExceptId(String code, long id) {
-        Integer count = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM productos WHERE LOWER(codigo) = LOWER(?) AND id <> ?",
-                Integer.class, code.trim(), id);
-        return count != null && count > 0;
-    }
-
-    @Override
     public long countActiveProducts() {
         Long count = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM productos WHERE activo = TRUE", Long.class);
@@ -103,14 +88,15 @@ public class JdbcProductRepository implements ProductRepository {
     }
 
     @Override
-    public void insert(ProductForm form) {
+    public String insert(ProductForm form) {
+        String code = reserveNextCode();
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(connection -> {
             PreparedStatement statement = connection.prepareStatement("""
                     INSERT INTO productos (codigo, nombre, descripcion, costo_actual, precio_venta_actual)
                     VALUES (?, ?, ?, ?, ?)
                     """, Statement.RETURN_GENERATED_KEYS);
-            statement.setString(1, form.getCode().trim());
+            statement.setString(1, code);
             statement.setString(2, form.getName().trim());
             statement.setString(3, normalizeDescription(form.getDescription()));
             statement.setBigDecimal(4, form.getCost());
@@ -123,15 +109,16 @@ public class JdbcProductRepository implements ProductRepository {
             throw new IllegalStateException("No se pudo obtener el identificador del producto.");
         }
         jdbcTemplate.update("INSERT INTO existencias (producto_id, cantidad) VALUES (?, 0)", generatedId.longValue());
+        return code;
     }
 
     @Override
     public int update(long id, ProductForm form) {
         return jdbcTemplate.update("""
                 UPDATE productos
-                SET codigo = ?, nombre = ?, descripcion = ?, costo_actual = ?, precio_venta_actual = ?
+                SET nombre = ?, descripcion = ?, costo_actual = ?, precio_venta_actual = ?
                 WHERE id = ? AND activo = TRUE
-                """, form.getCode().trim(), form.getName().trim(), normalizeDescription(form.getDescription()),
+                """, form.getName().trim(), normalizeDescription(form.getDescription()),
                 form.getCost(), form.getSalePrice(), id);
     }
 
@@ -162,6 +149,27 @@ public class JdbcProductRepository implements ProductRepository {
     public int deletePermanently(long id) {
         jdbcTemplate.update("DELETE FROM existencias WHERE producto_id = ?", id);
         return jdbcTemplate.update("DELETE FROM productos WHERE id = ?", id);
+    }
+
+    private String reserveNextCode() {
+        while (true) {
+            KeyHolder keyHolder = new GeneratedKeyHolder();
+            jdbcTemplate.update(connection -> connection.prepareStatement(
+                    "INSERT INTO codigos_producto () VALUES ()", Statement.RETURN_GENERATED_KEYS), keyHolder);
+            Number generatedId = keyHolder.getKey();
+            if (generatedId == null) {
+                throw new IllegalStateException("No se pudo reservar un código de producto.");
+            }
+            String code = "ANG-" + String.format(Locale.ROOT, "%08d", generatedId.longValue());
+            Integer matches = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM codigos_producto WHERE codigo = ?", Integer.class, code);
+            if (matches != null && matches > 0) continue;
+            if (jdbcTemplate.update("UPDATE codigos_producto SET codigo = ? WHERE id = ? AND codigo IS NULL",
+                    code, generatedId.longValue()) != 1) {
+                throw new IllegalStateException("No se pudo reservar el código de producto.");
+            }
+            return code;
+        }
     }
 
     private static String normalizeDescription(String description) {
