@@ -8,6 +8,8 @@ import mx.velian.angurgestion.product.model.Product;
 public interface ProductService {
     List<Product> findAll(String search);
 
+    List<Product> findArchived(String search);
+
     ProductForm findForm(long id);
 
     long countActiveProducts();
@@ -18,5 +20,9 @@ public interface ProductService {
 
     void update(long id, ProductForm form);
 
-    void deactivate(long id);
+    boolean deleteOrArchive(long id);
+
+    void restore(long id);
+
+    void deletePermanently(long id);
 }

@@ -38,12 +38,26 @@ public class JdbcProductRepository implements ProductRepository {
         String term = search == null ? "" : search.trim();
         if (term.isEmpty()) {
             return jdbcTemplate.query(
-                    SELECT_PRODUCTS + " ORDER BY p.activo DESC, p.nombre ASC", PRODUCT_MAPPER);
+                    SELECT_PRODUCTS + " WHERE p.activo = TRUE ORDER BY p.nombre ASC", PRODUCT_MAPPER);
         }
         String pattern = "%" + term + "%";
         return jdbcTemplate.query(SELECT_PRODUCTS + """
-                WHERE p.codigo LIKE ? OR p.nombre LIKE ?
-                ORDER BY p.activo DESC, p.nombre ASC
+                WHERE p.activo = TRUE AND (p.codigo LIKE ? OR p.nombre LIKE ?)
+                ORDER BY p.nombre ASC
+                """, PRODUCT_MAPPER, pattern, pattern);
+    }
+
+    @Override
+    public List<Product> findArchived(String search) {
+        String term = search == null ? "" : search.trim();
+        if (term.isEmpty()) {
+            return jdbcTemplate.query(
+                    SELECT_PRODUCTS + " WHERE p.activo = FALSE ORDER BY p.nombre ASC", PRODUCT_MAPPER);
+        }
+        String pattern = "%" + term + "%";
+        return jdbcTemplate.query(SELECT_PRODUCTS + """
+                WHERE p.activo = FALSE AND (p.codigo LIKE ? OR p.nombre LIKE ?)
+                ORDER BY p.nombre ASC
                 """, PRODUCT_MAPPER, pattern, pattern);
     }
 
@@ -122,8 +136,31 @@ public class JdbcProductRepository implements ProductRepository {
     }
 
     @Override
-    public int deactivate(long id) {
+    public boolean hasHistory(long id) {
+        Integer count = jdbcTemplate.queryForObject("""
+                SELECT (
+                    EXISTS(SELECT 1 FROM cotizacion_partidas WHERE producto_id = ?) +
+                    EXISTS(SELECT 1 FROM venta_partidas WHERE producto_id = ?) +
+                    EXISTS(SELECT 1 FROM movimientos_inventario WHERE producto_id = ?)
+                )
+                """, Integer.class, id, id, id);
+        return count != null && count > 0;
+    }
+
+    @Override
+    public int archive(long id) {
         return jdbcTemplate.update("UPDATE productos SET activo = FALSE WHERE id = ? AND activo = TRUE", id);
+    }
+
+    @Override
+    public int restore(long id) {
+        return jdbcTemplate.update("UPDATE productos SET activo = TRUE WHERE id = ? AND activo = FALSE", id);
+    }
+
+    @Override
+    public int deletePermanently(long id) {
+        jdbcTemplate.update("DELETE FROM existencias WHERE producto_id = ?", id);
+        return jdbcTemplate.update("DELETE FROM productos WHERE id = ?", id);
     }
 
     private static String normalizeDescription(String description) {

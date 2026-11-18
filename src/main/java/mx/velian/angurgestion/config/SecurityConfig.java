@@ -15,7 +15,7 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/css/**", "/images/**", "/favicon.ico", "/login", "/setup", "/acceso-denegado", "/error").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/productos/nuevo", "/productos/*/editar").hasAnyRole(
+                        .requestMatchers(HttpMethod.GET, "/productos/nuevo", "/productos/archivados", "/productos/*/editar").hasAnyRole(
                                 "ADMINISTRADOR", "ENCARGADO_ALMACEN")
                         .requestMatchers(HttpMethod.POST, "/productos/**").hasAnyRole(
                                 "ADMINISTRADOR", "ENCARGADO_ALMACEN")

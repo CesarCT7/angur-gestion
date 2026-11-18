@@ -9,6 +9,8 @@ import mx.velian.angurgestion.product.model.Product;
 public interface ProductRepository {
     List<Product> findAll(String search);
 
+    List<Product> findArchived(String search);
+
     Optional<Product> findById(long id);
 
     boolean existsByCode(String code);
@@ -23,5 +25,11 @@ public interface ProductRepository {
 
     int update(long id, ProductForm form);
 
-    int deactivate(long id);
+    boolean hasHistory(long id);
+
+    int archive(long id);
+
+    int restore(long id);
+
+    int deletePermanently(long id);
 }

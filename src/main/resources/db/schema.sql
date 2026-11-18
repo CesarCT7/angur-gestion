@@ -109,7 +109,7 @@ CREATE TABLE cotizaciones (
 CREATE TABLE cotizacion_partidas (
     id                  BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     cotizacion_id       BIGINT UNSIGNED NOT NULL,
-    producto_id         BIGINT UNSIGNED NOT NULL,
+    producto_id         BIGINT UNSIGNED NULL COMMENT 'NULL si el producto se elimino; codigo y nombre conservan la instantanea',
     codigo_producto     VARCHAR(80) NOT NULL COMMENT 'Instantanea para conservar el detalle historico',
     nombre_producto     VARCHAR(160) NOT NULL COMMENT 'Instantanea para conservar el detalle historico',
     cantidad            INT UNSIGNED NOT NULL,
@@ -120,7 +120,7 @@ CREATE TABLE cotizacion_partidas (
     CONSTRAINT fk_cotizacion_partidas_cotizacion FOREIGN KEY (cotizacion_id)
         REFERENCES cotizaciones (id) ON UPDATE RESTRICT ON DELETE RESTRICT,
     CONSTRAINT fk_cotizacion_partidas_producto FOREIGN KEY (producto_id)
-        REFERENCES productos (id) ON UPDATE RESTRICT ON DELETE RESTRICT,
+        REFERENCES productos (id) ON UPDATE RESTRICT ON DELETE SET NULL,
     CONSTRAINT chk_cotizacion_partida_cantidad CHECK (cantidad > 0),
     CONSTRAINT chk_cotizacion_partida_precio CHECK (precio_unitario >= 0),
     CONSTRAINT chk_cotizacion_partida_subtotal CHECK (subtotal = ROUND(cantidad * precio_unitario, 2)),
@@ -154,7 +154,7 @@ CREATE TABLE ventas (
 CREATE TABLE venta_partidas (
     id                  BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     venta_id            BIGINT UNSIGNED NOT NULL,
-    producto_id         BIGINT UNSIGNED NOT NULL,
+    producto_id         BIGINT UNSIGNED NULL COMMENT 'NULL si el producto se elimino; codigo y nombre conservan la instantanea',
     codigo_producto     VARCHAR(80) NOT NULL COMMENT 'Instantanea para conservar el detalle historico',
     nombre_producto     VARCHAR(160) NOT NULL COMMENT 'Instantanea para conservar el detalle historico',
     cantidad            INT UNSIGNED NOT NULL,
@@ -166,7 +166,7 @@ CREATE TABLE venta_partidas (
     CONSTRAINT fk_venta_partidas_venta FOREIGN KEY (venta_id)
         REFERENCES ventas (id) ON UPDATE RESTRICT ON DELETE RESTRICT,
     CONSTRAINT fk_venta_partidas_producto FOREIGN KEY (producto_id)
-        REFERENCES productos (id) ON UPDATE RESTRICT ON DELETE RESTRICT,
+        REFERENCES productos (id) ON UPDATE RESTRICT ON DELETE SET NULL,
     CONSTRAINT chk_venta_partida_cantidad CHECK (cantidad > 0),
     CONSTRAINT chk_venta_partida_precio CHECK (precio_unitario >= 0),
     CONSTRAINT chk_venta_partida_costo CHECK (costo_unitario >= 0),
@@ -176,7 +176,9 @@ CREATE TABLE venta_partidas (
 
 CREATE TABLE movimientos_inventario (
     id                      BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-    producto_id             BIGINT UNSIGNED NOT NULL,
+    producto_id             BIGINT UNSIGNED NULL COMMENT 'NULL si el producto se elimino; la instantanea conserva su identidad',
+    codigo_producto         VARCHAR(80) NOT NULL,
+    nombre_producto         VARCHAR(160) NOT NULL,
     usuario_id              BIGINT UNSIGNED NOT NULL,
     venta_id                BIGINT UNSIGNED NULL COMMENT 'Se llena para las salidas generadas por ventas',
     tipo                    ENUM('ENTRADA', 'SALIDA') NOT NULL,
@@ -188,7 +190,7 @@ CREATE TABLE movimientos_inventario (
     PRIMARY KEY (id),
     CONSTRAINT uq_movimientos_operacion_producto_tipo UNIQUE (clave_operacion, producto_id, tipo),
     CONSTRAINT fk_movimientos_producto FOREIGN KEY (producto_id)
-        REFERENCES productos (id) ON UPDATE RESTRICT ON DELETE RESTRICT,
+        REFERENCES productos (id) ON UPDATE RESTRICT ON DELETE SET NULL,
     CONSTRAINT fk_movimientos_usuario FOREIGN KEY (usuario_id)
         REFERENCES usuarios (id) ON UPDATE RESTRICT ON DELETE RESTRICT,
     CONSTRAINT fk_movimientos_venta FOREIGN KEY (venta_id)

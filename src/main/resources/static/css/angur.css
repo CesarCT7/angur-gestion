@@ -743,16 +743,6 @@ select:focus-visible {
     font-weight: 650;
 }
 
-.row-inactive {
-    background: #fafbfa;
-}
-
-.row-inactive td,
-.row-inactive strong,
-.row-inactive .code-label {
-    color: #737f80;
-}
-
 .actions-cell {
     display: flex;
     flex-wrap: wrap;

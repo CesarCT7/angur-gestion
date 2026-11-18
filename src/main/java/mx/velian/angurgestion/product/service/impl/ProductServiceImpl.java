@@ -25,6 +25,11 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    public List<Product> findArchived(String search) {
+        return productRepository.findArchived(search);
+    }
+
+    @Override
     public ProductForm findForm(long id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ProductNotFoundException(id));
@@ -86,9 +91,32 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public void deactivate(long id) {
-        if (productRepository.deactivate(id) == 0 && productRepository.findById(id).isEmpty()) {
+    public boolean deleteOrArchive(long id) {
+        productRepository.findById(id).orElseThrow(() -> new ProductNotFoundException(id));
+        if (productRepository.hasHistory(id)) {
+            productRepository.archive(id);
+            return true;
+        }
+        productRepository.deletePermanently(id);
+        return false;
+    }
+
+    @Override
+    @Transactional
+    public void restore(long id) {
+        if (productRepository.restore(id) == 0 && productRepository.findById(id).isEmpty()) {
             throw new ProductNotFoundException(id);
         }
+    }
+
+    @Override
+    @Transactional
+    public void deletePermanently(long id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ProductNotFoundException(id));
+        if (product.active()) {
+            throw new IllegalStateException("Solo se puede eliminar definitivamente un producto archivado.");
+        }
+        productRepository.deletePermanently(id);
     }
 }

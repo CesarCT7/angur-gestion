@@ -10,10 +10,14 @@
             <section class="page-heading">
                 <div>
                     <p class="eyebrow">Catálogo</p>
-                    <h1>Productos e inventario</h1>
-                    <p class="page-subtitle">Consulta productos, costos autorizados y existencias actuales.</p>
+                    <h1 th:text="${archived} ? 'Productos archivados' : 'Productos e inventario'">Productos e inventario</h1>
+                    <p class="page-subtitle" th:text="${archived} ? 'Restaura un producto o elimínalo definitivamente.' : 'Consulta productos, costos autorizados y existencias actuales.'">Consulta productos, costos autorizados y existencias actuales.</p>
                 </div>
-                <a class="btn btn-angur-primary" th:if="${canManageProducts}" th:href="@{/productos/nuevo}">Nuevo producto</a>
+                <div class="d-flex gap-2">
+                    <a class="btn btn-outline-angur" th:if="${canManageProducts and !archived}" th:href="@{/productos/archivados}">Ver archivados</a>
+                    <a class="btn btn-outline-angur" th:if="${canManageProducts and archived}" th:href="@{/productos}">Volver al catálogo</a>
+                    <a class="btn btn-angur-primary" th:if="${canManageProducts and !archived}" th:href="@{/productos/nuevo}">Nuevo producto</a>
+                </div>
             </section>
 
             <div class="alert alert-success" role="status" th:if="${successMessage}" th:text="${successMessage}"></div>
@@ -24,7 +28,7 @@
                 <div class="panel-heading catalog-toolbar">
                     <div>
                         <p class="eyebrow">Listado</p>
-                        <h2 id="catalog-title">Catálogo de productos</h2>
+                        <h2 id="catalog-title" th:text="${archived} ? 'Archivo' : 'Catálogo de productos'">Catálogo de productos</h2>
                     </div>
                     <form class="search-form" method="get" th:action="@{/productos}" role="search">
                         <label class="visually-hidden" for="search-products">Buscar por código o nombre</label>
@@ -38,7 +42,7 @@
                         <caption class="visually-hidden">Productos y existencias de Angur Gestión</caption>
                         <thead><tr><th scope="col">Código</th><th scope="col">Nombre</th><th scope="col" th:if="${canViewCost}">Costo</th><th scope="col">Precio de venta</th><th scope="col">Existencia</th><th scope="col">Estado</th><th scope="col" th:if="${canManageProducts}">Acciones</th></tr></thead>
                         <tbody>
-                        <tr th:each="product : ${products}" th:classappend="${!product.active} ? ' row-inactive' : ''">
+                        <tr th:each="product : ${products}">
                             <td><span class="code-label" th:text="${product.code}">SKU</span></td>
                             <td>
                                 <strong th:text="${product.name}">Nombre</strong>
@@ -48,15 +52,24 @@
                             <td th:text="${'$' + #numbers.formatDecimal(product.salePrice, 1, 'COMMA', 2, 'POINT')}">$0.00</td>
                             <td th:text="${#numbers.formatInteger(product.stock, 1, 'COMMA')}">0</td>
                             <td>
-                                <span class="status-pill" th:if="${product.active}" th:classappend="${product.stock > 0} ? ' status-available' : ' status-empty'" th:text="${product.availabilityLabel}">Disponible</span>
-                                <span class="status-pill status-inactive" th:unless="${product.active}">Inactivo</span>
+                                <span class="status-pill" th:if="${!archived}" th:classappend="${product.stock > 0} ? ' status-available' : ' status-empty'" th:text="${product.availabilityLabel}">Disponible</span>
+                                <span class="status-pill status-inactive" th:if="${archived}">Archivado</span>
                             </td>
                             <td class="actions-cell" th:if="${canManageProducts}">
-                                <a class="btn btn-sm btn-outline-angur" th:if="${product.active}" th:href="@{/productos/{id}/editar(id=${product.id})}">Editar</a>
-                                <form th:if="${product.active}" th:action="@{/productos/{id}/desactivar(id=${product.id})}" method="post" onsubmit="return confirm('¿Desactivar este producto? Su historial se conservará.');">
-                                    <button class="btn btn-sm btn-outline-danger-soft" type="submit">Desactivar</button>
-                                </form>
-                                <span class="muted-note" th:unless="${product.active}">Historial conservado</span>
+                                <th:block th:if="${!archived}">
+                                    <a class="btn btn-sm btn-outline-angur" th:href="@{/productos/{id}/editar(id=${product.id})}">Editar</a>
+                                    <form th:action="@{/productos/{id}/desactivar(id=${product.id})}" method="post" onsubmit="return confirm('¿Eliminar este producto? Si tiene historial se archivará; si no, se borrará definitivamente.');">
+                                        <button class="btn btn-sm btn-outline-danger-soft" type="submit">Eliminar</button>
+                                    </form>
+                                </th:block>
+                                <th:block th:if="${archived}">
+                                    <form th:action="@{/productos/{id}/restaurar(id=${product.id})}" method="post">
+                                        <button class="btn btn-sm btn-outline-angur" type="submit">Restaurar</button>
+                                    </form>
+                                    <form th:action="@{/productos/{id}/eliminar-definitivamente(id=${product.id})}" method="post" onsubmit="return confirm('¿Eliminar definitivamente este producto? No podrá restaurarse. Las partidas y movimientos históricos se conservarán.');">
+                                        <button class="btn btn-sm btn-outline-danger-soft" type="submit">Eliminar definitivamente</button>
+                                    </form>
+                                </th:block>
                             </td>
                         </tr>
                         </tbody>
@@ -65,16 +78,17 @@
 
                 <div class="empty-state" th:if="${products.isEmpty()}">
                     <span class="empty-state-mark" aria-hidden="true">PR</span>
-                    <h3 th:text="${search == null or search.isBlank()} ? 'Aún no hay productos' : 'No encontramos coincidencias'">Aún no hay productos</h3>
-                    <p th:if="${search == null or search.isBlank()}">Los productos que registres aparecerán aquí. La existencia inicial será cero y se actualizará con movimientos de inventario.</p>
-                    <p th:unless="${search == null or search.isBlank()}">Prueba con otro código o nombre.</p>
+                    <h3 th:text="${search != null and !search.isBlank()} ? 'No encontramos coincidencias' : (${archived} ? 'No hay productos archivados' : 'Aún no hay productos')">Aún no hay productos</h3>
+                    <p th:if="${(search == null or search.isBlank()) and !archived}">Los productos que registres aparecerán aquí. La existencia inicial será cero y se actualizará con movimientos de inventario.</p>
+                    <p th:if="${(search == null or search.isBlank()) and archived}">Los productos archivados aparecerán aquí. Puedes restaurarlos o eliminarlos definitivamente.</p>
+                    <p th:if="${search != null and !search.isBlank()}">Prueba con otro código o nombre.</p>
                     <a class="btn btn-angur-primary" th:if="${canManageProducts and (search == null or search.isBlank())}" th:href="@{/productos/nuevo}">Registrar primer producto</a>
                 </div>
             </section>
         </div>
     </main>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+<script th:src="@{/vendor/bootstrap/bootstrap.bundle.min.js}"
         integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
         crossorigin="anonymous"></script>
 </body>

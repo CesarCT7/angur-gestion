@@ -57,7 +57,7 @@ La base MySQL es la fuente de datos prevista. No se guardan credenciales de acce
 - Alta inicial de la primera cuenta administradora desde /setup; el formulario deja de crear esa cuenta después de que ya hay usuarios.
 - Roles reconocidos por el modelo: ADMINISTRADOR, VENDEDOR, CLIENTE, SUPERVISOR_VENTAS y ENCARGADO_ALMACEN.
 - Panel inicial con resumen de productos, existencias, ventas e información reciente disponible. La pantalla del cliente sigue siendo provisional.
-- Catálogo de productos: consultar, buscar, crear, editar y desactivar lógicamente.
+- Catálogo de productos: consultar, buscar, crear y editar. Los productos sin historial se eliminan físicamente; los que tienen historial se archivan y pueden restaurarse o eliminarse definitivamente sin perder partidas ni movimientos históricos.
 - Un producto nuevo crea su registro de existencia con cantidad cero. El catálogo no permite ajustar existencias.
 - En el catálogo se ocultan costos a roles que no deben consultarlos; el acceso a creación y edición de productos está restringido a administración y almacén.
 - Interfaz adaptable inspirada en el Look & Feel recibido, con navegación y estados vacíos. Las secciones que no están hechas aparecen como próximas/no disponibles.
@@ -65,7 +65,7 @@ La base MySQL es la fuente de datos prevista. No se guardan credenciales de acce
 
 ### Lo que este estado no confirma
 
-- La copia del repositorio y el paquete ejecutable de Descargas tienen estados distintos. El arranque y MySQL se verificaron en el paquete ejecutable; eso no actualiza automáticamente este checkout.
+- La copia del repositorio y el paquete ejecutable de Descargas aún tienen diferencias en autenticación. Ambos incluyen el cambio de eliminación de productos y la migración de base de datos correspondiente.
 - Una pantalla o enlace de una función futura no significa que el flujo completo exista.
 - La compilación no equivale a una prueba funcional ni confirma operaciones contra una base real.
 
@@ -180,15 +180,16 @@ Esta sección define el proceso para futuras peticiones de código:
 
 ### Solicitudes directas del usuario pendientes
 
-No hay solicitudes directas pendientes. La autenticación web se completó en el paquete ejecutable de Descargas y se verificó al iniciarlo localmente. Este checkout del repositorio aún contiene una versión anterior del código; no atribuirle esas funciones hasta sincronizarlo con el paquete actualizado. Android queda para una etapa posterior.
+No hay solicitudes directas pendientes en este momento. La petición de eliminación de productos se completó en este checkout y en el paquete ejecutable: los archivados no aparecen en el catálogo normal; el archivo permite restaurarlos o eliminarlos definitivamente conservando sus datos históricos.
 
 ### Siguiente paso recomendado
 
-Sincronizar el código actualizado del paquete ejecutable con el repositorio y después continuar con los módulos de clientes e inventario. Android queda para una etapa posterior.
+Siguiente trabajo funcional: clientes e inventario. Android continúa en una etapa posterior. Antes de usar el cambio en una base existente, respáldala y ejecuta `src/main/resources/db/migrations/002-eliminacion-productos.sql` una sola vez.
 
 ## 9. Verificación conocida
 
 - Último estado de compilación conocido: .\mvnw.cmd -DskipTests compile terminó correctamente.
+- El 18 de noviembre de 2026, el paquete ejecutable y este checkout compilaron correctamente con `mvnw -DskipTests compile`. La migración `002-eliminacion-productos.sql` también se aplicó a la base local del paquete después de crear un respaldo.
 - El paquete ejecutable de Descargas inició en Windows el 18 de noviembre de 2026; se aplicó el esquema MySQL, se comprobaron sus 11 tablas y el login respondió HTTP 200 en localhost:18080. Esto no verifica ni sustituye el código de este checkout.
 - No se ejecutó la suite de pruebas de este checkout.
 - Antes de informar que una función quedó lista, compilar y verificar el flujo relevante. Ejecutar pruebas cuando el usuario las solicite o cuando el plan de entrega las incluya.

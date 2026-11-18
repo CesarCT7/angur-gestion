@@ -35,9 +35,22 @@ public class ProductController {
     public String list(@RequestParam(defaultValue = "") String q, Authentication authentication, Model model) {
         model.addAttribute("products", productService.findAll(q));
         model.addAttribute("search", q);
+        model.addAttribute("archived", false);
         model.addAttribute("canManageProducts", canManageProducts(authentication));
         model.addAttribute("canViewCost", canManageProducts(authentication));
         model.addAttribute("pageTitle", "Productos e inventario");
+        model.addAttribute("activePage", "productos");
+        return "products/list";
+    }
+
+    @GetMapping("/archivados")
+    public String archived(@RequestParam(defaultValue = "") String q, Authentication authentication, Model model) {
+        model.addAttribute("products", productService.findArchived(q));
+        model.addAttribute("search", q);
+        model.addAttribute("archived", true);
+        model.addAttribute("canManageProducts", canManageProducts(authentication));
+        model.addAttribute("canViewCost", canManageProducts(authentication));
+        model.addAttribute("pageTitle", "Productos archivados");
         model.addAttribute("activePage", "productos");
         return "products/list";
     }
@@ -122,12 +135,42 @@ public class ProductController {
     @PostMapping("/{id}/desactivar")
     public String deactivate(@PathVariable long id, RedirectAttributes redirectAttributes) {
         try {
-            productService.deactivate(id);
-            redirectAttributes.addFlashAttribute("successMessage", "El producto se desactivó y su historial se conservó.");
+            boolean archived = productService.deleteOrArchive(id);
+            redirectAttributes.addFlashAttribute("successMessage", archived
+                    ? "El producto se archivó porque tiene historial. Puedes restaurarlo o eliminarlo definitivamente desde Archivados."
+                    : "El producto se eliminó definitivamente porque no tiene historial.");
         } catch (ProductNotFoundException exception) {
             redirectAttributes.addFlashAttribute("errorMessage", "No se encontró el producto o ya estaba desactivado.");
+        } catch (DataAccessException exception) {
+            redirectAttributes.addFlashAttribute("errorMessage", "No fue posible eliminar el producto. Revisa la conexión con MySQL e inténtalo de nuevo.");
         }
         return "redirect:/productos";
+    }
+
+    @PostMapping("/{id}/restaurar")
+    public String restore(@PathVariable long id, RedirectAttributes redirectAttributes) {
+        try {
+            productService.restore(id);
+            redirectAttributes.addFlashAttribute("successMessage", "El producto se restauró al catálogo.");
+        } catch (ProductNotFoundException exception) {
+            redirectAttributes.addFlashAttribute("errorMessage", "No se encontró el producto archivado.");
+        }
+        return "redirect:/productos/archivados";
+    }
+
+    @PostMapping("/{id}/eliminar-definitivamente")
+    public String deletePermanently(@PathVariable long id, RedirectAttributes redirectAttributes) {
+        try {
+            productService.deletePermanently(id);
+            redirectAttributes.addFlashAttribute("successMessage", "El producto se eliminó definitivamente. Las ventas, cotizaciones y movimientos históricos se conservaron.");
+        } catch (ProductNotFoundException exception) {
+            redirectAttributes.addFlashAttribute("errorMessage", "No se encontró el producto archivado.");
+        } catch (IllegalStateException exception) {
+            redirectAttributes.addFlashAttribute("errorMessage", exception.getMessage());
+        } catch (DataAccessException exception) {
+            redirectAttributes.addFlashAttribute("errorMessage", "No fue posible eliminar el producto. Revisa la conexión con MySQL e inténtalo de nuevo.");
+        }
+        return "redirect:/productos/archivados";
     }
 
     private static boolean canManageProducts(Authentication authentication) {

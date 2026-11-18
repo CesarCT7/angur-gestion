@@ -55,9 +55,11 @@ public class JdbcDashboardRepository implements DashboardRepository {
     @Override
     public List<RecentMovement> findRecentMovements(int limit) {
         return jdbcTemplate.query("""
-                SELECT m.fecha, p.codigo, p.nombre, m.tipo, m.cantidad, m.motivo, u.nombre AS usuario_nombre
+                SELECT m.fecha, COALESCE(p.codigo, m.codigo_producto) AS codigo,
+                       COALESCE(p.nombre, m.nombre_producto) AS nombre,
+                       m.tipo, m.cantidad, m.motivo, u.nombre AS usuario_nombre
                 FROM movimientos_inventario m
-                JOIN productos p ON p.id = m.producto_id
+                LEFT JOIN productos p ON p.id = m.producto_id
                 JOIN usuarios u ON u.id = m.usuario_id
                 ORDER BY m.fecha DESC, m.id DESC
                 LIMIT ?
