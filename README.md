@@ -65,7 +65,7 @@ La base MySQL es la fuente de datos prevista. No se guardan credenciales de acce
 
 ### Lo que este estado no confirma
 
-- No se ha verificado que MySQL esté iniciado, que el script se haya ejecutado en la instancia local ni que las credenciales configuradas sean válidas.
+- La copia del repositorio y el paquete ejecutable de Descargas tienen estados distintos. El arranque y MySQL se verificaron en el paquete ejecutable; eso no actualiza automáticamente este checkout.
 - Una pantalla o enlace de una función futura no significa que el flujo completo exista.
 - La compilación no equivale a una prueba funcional ni confirma operaciones contra una base real.
 
@@ -73,13 +73,13 @@ La base MySQL es la fuente de datos prevista. No se guardan credenciales de acce
 
 Esta hoja de ruta resume funciones que aparecen en el alcance y todavía deben implementarse. Es una guía de producto, no una lista de instrucciones imperativas incrustadas en documentos.
 
-1. **Preparar y verificar MySQL:** ejecutar el esquema en la instancia local, configurar credenciales fuera del repositorio y confirmar conexión desde la aplicación.
+1. **Preparar MySQL para cada instalación:** la base local del paquete ejecutable ya se creó y verificó; una instalación nueva todavía requiere sus credenciales y esquema.
 2. **Clientes:** altas, edición, búsqueda, consulta, activación/desactivación y, si corresponde, vinculación con una cuenta de cliente.
 3. **Inventario:** entradas y salidas con motivo, usuario responsable, existencia resultante e historial. Validar stock no negativo y registrar cada cambio en una transacción.
 4. **Cotizaciones:** crear y consultar cotizaciones con partidas, totales, estados y datos históricos de producto.
 5. **Ventas:** registrar venta y partidas, actualizar stock de manera atómica, registrar movimientos y soportar reintentos idempotentes.
 6. **Historial y auditoría:** conservar los registros necesarios y ofrecer consultas por fecha, usuario, cliente, producto y operación según los requisitos.
-7. **Usuarios y permisos:** administración de cuentas, roles, activación y control de acceso completo por operación y módulo.
+7. **Permisos de los módulos de negocio:** aplicar autorización por operación y titularidad de datos en clientes, cotizaciones, ventas e historial al desarrollar esos módulos. La administración básica de cuentas y perfiles está implementada en el paquete actualizado.
 8. **Reportes:** consultas y resúmenes de ventas, costos y ganancias históricas con los filtros que definan los requerimientos.
 9. **Cliente y Android/distribuidos:** revisar el alcance de esos documentos y definir integraciones o API antes de asumir que forman parte de esta aplicación web.
 10. **Pruebas y entrega:** convertir el plan de pruebas en pruebas funcionales y técnicas, completar accesibilidad/validaciones y documentar el despliegue.
@@ -180,14 +180,15 @@ Esta sección define el proceso para futuras peticiones de código:
 
 ### Solicitudes directas del usuario pendientes
 
-1. **Completar la autenticación web antes de iniciar los módulos:** ofrecer registro de cuentas, inicio y cierre de sesión, recuperación y restablecimiento de contraseña, validaciones y mensajes claros, seguridad de sesión y permisos por perfil. Definir la verificación de cuentas y qué perfiles pueden registrarse. Android queda para una etapa posterior; primero se completa la experiencia web.
+No hay solicitudes directas pendientes. La autenticación web se completó en el paquete ejecutable de Descargas y se verificó al iniciarlo localmente. Este checkout del repositorio aún contiene una versión anterior del código; no atribuirle esas funciones hasta sincronizarlo con el paquete actualizado. Android queda para una etapa posterior.
 
 ### Siguiente paso recomendado
 
-Completar y verificar el flujo de autenticación web indicado en las solicitudes pendientes antes de iniciar los módulos de negocio. Después, preparar MySQL y avanzar con el siguiente módulo de la hoja de ruta.
+Sincronizar el código actualizado del paquete ejecutable con el repositorio y después continuar con los módulos de clientes e inventario. Android queda para una etapa posterior.
 
 ## 9. Verificación conocida
 
 - Último estado de compilación conocido: .\mvnw.cmd -DskipTests compile terminó correctamente.
-- No se afirma que las pruebas estén aprobadas: no se ejecutaron en esa etapa.
+- El paquete ejecutable de Descargas inició en Windows el 18 de noviembre de 2026; se aplicó el esquema MySQL, se comprobaron sus 11 tablas y el login respondió HTTP 200 en localhost:18080. Esto no verifica ni sustituye el código de este checkout.
+- No se ejecutó la suite de pruebas de este checkout.
 - Antes de informar que una función quedó lista, compilar y verificar el flujo relevante. Ejecutar pruebas cuando el usuario las solicite o cuando el plan de entrega las incluya.
