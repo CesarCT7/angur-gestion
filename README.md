@@ -123,7 +123,7 @@ El detalle de las observaciones del esquema está en src/main/resources/db/READM
 
 ### Configurar credenciales en PowerShell
 
-En la misma terminal desde la que ejecutarás la aplicación:
+Usa `.env.example` como referencia. Configura las variables en la misma terminal desde la que ejecutarás la aplicación; Spring Boot no carga automáticamente un archivo `.env`:
 
 ~~~powershell
 $env:DB_URL = 'jdbc:mysql://localhost:3306/angur_gestion?useUnicode=true&characterEncoding=UTF-8&serverTimezone=America/Mexico_City'
