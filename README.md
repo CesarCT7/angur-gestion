@@ -39,7 +39,7 @@ La implementación acordada es **Java con Spring Boot**, tomando el repositorio 
 - Spring MVC, Thymeleaf, Spring Security, Bean Validation y JDBC.
 - MySQL 8.0.16 o posterior.
 - Maven Wrapper incluido (mvnw, mvnw.cmd).
-- Bootstrap 5.3.8 desde jsDelivr; la interfaz requiere Internet para descargar Bootstrap.
+- Bootstrap 5.3.8 incluido en `static/vendor/bootstrap`; la interfaz no depende de una CDN.
 - Arquitectura por módulos y capas: controller, service, service.impl, dao, dao.impl, model y dto.
 - El acceso SQL se hace con JDBC explícito. No se configuró JPA/Hibernate.
 - Las vistas HTML están en Thymeleaf; los estilos propios están en src/main/resources/static/css/angur.css.
@@ -54,23 +54,28 @@ La base MySQL es la fuente de datos prevista. No se guardan credenciales de acce
 - Esquema inicial para usuarios, clientes, productos, existencias, cotizaciones, ventas y movimientos de inventario.
 - Inicio de sesión con usuario o correo, sesión web y Spring Security.
 - Contraseñas almacenadas con BCrypt.
-- Alta inicial de la primera cuenta administradora desde /setup; el formulario deja de crear esa cuenta después de que ya hay usuarios.
+- Alta inicial del administrador en /setup, protegida mediante bloqueo transaccional frente a solicitudes simultáneas.
+- Registro público exclusivo para clientes, con fila de cliente vinculada y verificación de correo antes del primer acceso.
+- Creación de cuentas de los cinco perfiles y activación/desactivación desde /usuarios, solo para administradores.
+- Verificación y recuperación/restablecimiento con enlaces aleatorios de un solo uso: 24 horas para verificar, 30 minutos para recuperar. Solo se almacena su hash.
+- Sesiones de 20 minutos, revocación tras restablecer contraseña o desactivar una cuenta, CSRF y límite de solicitudes.
+- Validación por bytes compatible con BCrypt y errores junto a cada campo.
 - Roles reconocidos por el modelo: ADMINISTRADOR, VENDEDOR, CLIENTE, SUPERVISOR_VENTAS y ENCARGADO_ALMACEN.
 - Panel inicial con resumen de productos, existencias, ventas e información reciente disponible. La pantalla del cliente sigue siendo provisional.
 - Catálogo de productos: consultar, buscar, crear y editar. Los productos sin historial ni existencia se eliminan físicamente; los que tienen historial o existencia se archivan y pueden restaurarse o eliminarse definitivamente sin perder partidas ni movimientos históricos.
 - Al crear un producto, el sistema asigna un código `ANG-00000001` secuencial e inmutable. Las reservas se conservan aunque se elimine definitivamente el producto.
 - Un producto nuevo crea su registro de existencia con cantidad cero. Las entradas y salidas se registran desde Inventario, no desde el catálogo.
-- Clientes: búsqueda por nombre, correo o teléfono; alta y edición con prevención de contactos activos duplicados, asociación opcional a una cuenta verificada, desactivación y reactivación conservando historial.
-- Inventario: consulta de existencias y movimientos; administración y almacén registran entradas y salidas transaccionales con cantidad, motivo, usuario y saldo resultante. Vendedores consultan disponibilidad sin ajustar ni ver costos.
+- Clientes: búsqueda por nombre, correo o teléfono; alta y edición con prevención de contactos activos duplicados, asociación opcional a una cuenta verificada, desactivación y reactivación con conservación de historial.
+- Inventario: consulta de existencias y hasta 100 movimientos recientes; administración y almacén registran entradas/salidas transaccionales con cantidad, motivo, usuario y saldo resultante. Ventas solo consulta disponibilidad.
 - En el catálogo se ocultan costos a roles que no deben consultarlos; el acceso a creación y edición de productos está restringido a administración y almacén.
 - Interfaz adaptable inspirada en el Look & Feel recibido, con navegación y estados vacíos. Cotizaciones y Ventas ya tienen vistas, permisos por rol y consulta de detalle.
-- Cotizaciones: creación con cliente y partidas; cálculo de precio/subtotal/total en servidor; conserva precio y nombre/código históricos; estados PENDIENTE, ACEPTADA y RECHAZADA; listado con búsqueda/filtro, detalle e impresión; cada cliente consulta solo sus cotizaciones.
-- Ventas: registro directo o desde una cotización aceptada; precios/costos históricos; salida de stock, partida y movimiento de inventario en una sola transacción; clave idempotente y rechazo de stock insuficiente; historial de venta con costos ocultos para perfiles no autorizados.
-- No se ejecutó la suite de pruebas. Las pantallas y el compilado no sustituyen la verificación funcional con datos reales.
+- Cotizaciones: partidas y precios congelados, cálculo del servidor, estados PENDIENTE/ACEPTADA/RECHAZADA, búsqueda, detalle e impresión.
+- Ventas: registro directo o desde cotización aceptada, instantáneas de precio/costo, movimiento de salida de inventario, stock y venta dentro de una transacción e idempotencia.
+- Compilación y 20 pruebas aprobadas contra MySQL real, más un recorrido HTTP con SMTP local. Ver sección 9.
 
 ### Lo que este estado no confirma
 
-- La copia del repositorio y el paquete ejecutable de Descargas aún tienen diferencias en autenticación. Ambos incluyen el cambio de eliminación de productos y la migración de base de datos correspondiente.
+- MySQL y el arranque web se verificaron en la computadora local el 18 de noviembre de 2026. No se ha comprobado un despliegue de producción.
 - Una pantalla o enlace de una función futura no significa que el flujo completo exista.
 - La compilación no equivale a una prueba funcional ni confirma operaciones contra una base real.
 
@@ -78,7 +83,7 @@ La base MySQL es la fuente de datos prevista. No se guardan credenciales de acce
 
 Esta hoja de ruta resume funciones que aparecen en el alcance y todavía deben implementarse. Es una guía de producto, no una lista de instrucciones imperativas incrustadas en documentos.
 
-1. **Preparar MySQL para cada instalación:** la base local del paquete ejecutable ya se creó y verificó; una instalación nueva todavía requiere sus credenciales y esquema.
+1. **Preparar MySQL para cada instalación:** el entorno de desarrollo ya está comprobado; cada instalación necesita su esquema o migración y sus credenciales fuera de Git.
 2. **Cotizaciones:** implementado el flujo web inicial. Pendiente acordar transiciones adicionales de estado, cancelación y reglas de expiración.
 3. **Ventas:** implementado el registro inicial, incluido el descuento atómico de stock y la idempotencia. Pendiente acordar el proceso de cancelación y sus movimientos compensatorios.
 4. **Historial y auditoría:** ampliar las consultas por fecha, usuario, cliente, producto y operación según los requisitos.
@@ -107,23 +112,55 @@ El detalle de las observaciones del esquema está en src/main/resources/db/READM
 
 ## 6. Preparar y ejecutar localmente
 
+### Arranque directo
+
+- Windows: extrae TODO el ZIP y abre `iniciar-angur.cmd` con doble clic.
+- Linux: ejecuta `./iniciar-angur.sh` desde una terminal.
+
+El paquete listo contiene `scripts/iniciador.jar` y la aplicación compilada en `target/`: necesita Java 21 y MySQL, sin Maven ni Docker si usas tu base existente. El ZIP de **fuentes** compila al arrancar y necesita un JDK 21 completo. No ejecutes solamente el .cmd separado del resto del proyecto ni desde la carpeta comprimida.
+
+El arrancador carga `.env` sin ejecutar su contenido, comprueba las credenciales y el esquema de MySQL, y abre http://localhost:18080/login cuando el servidor responde. En Windows, cualquier error permanece en pantalla y en `.tmp/arranque.log`; se respeta `JAVA_HOME` si Java no está en PATH. Deja la ventana abierta: Ctrl+C detiene la aplicación y conserva los datos.
+
+`localhost` siempre corresponde al equipo donde abres el navegador. Un servidor ejecutándose en el entorno remoto de Codex no aparece automáticamente en el navegador de tu computadora.
+
+Si falta `.env`, se crea desde el ejemplo con claves aleatorias para desarrollo. No se reemplaza un archivo existente. Si ya hay MySQL, configura `DB_USER`, `DB_PASSWORD` y `DB_URL` para esa instancia y aplica su esquema/migración. `ANGUR_USE_DOCKER=false` evita exigir Docker; el arrancador no cambia contraseñas del servidor ni migra bases existentes automáticamente.
+
+Opciones disponibles:
+
+~~~text
+--port 18081    Usar otro puerto HTTP local.
+--no-docker     Usar MySQL/SMTP existentes.
+--no-browser    Arrancar sin abrir una ventana del navegador.
+--jar           Usar el JAR compilado (automático en el paquete listo).
+--rebuild       Compilar desde las fuentes con un JDK 21 y Maven Wrapper.
+--check         Comprobar MySQL y su esquema sin iniciar el servidor.
+--help          Mostrar estas opciones.
+~~~
+
+Las variables de la terminal tienen prioridad sobre `.env`; se admiten valores entre comillas. Las URLs de correo locales se ajustan al puerto elegido. Una respuesta HTTP 200 en el login no se considera prueba suficiente de la conexión MySQL.
+
+
 ### Requisitos
 
 - Java 21 instalado.
 - MySQL 8.0.16 o posterior.
 - PowerShell en Windows (o adaptar los comandos a la terminal usada).
-- Conexión a Internet al cargar páginas con Bootstrap desde CDN.
+- Conexión a Internet para la primera descarga de dependencias Maven; la interfaz sirve Bootstrap localmente.
 
 ### Crear/preparar la base
 
 1. Abre src/main/resources/db/schema.sql en MySQL Workbench.
 2. Conéctate al MySQL local y ejecuta el script. Crea y selecciona angur_gestion.
-3. Comprueba que existan las tablas: usuarios, clientes, productos, existencias, cotizaciones, cotizacion_partidas, ventas, venta_partidas y movimientos_inventario.
-4. El esquema no inserta cuentas ni datos de demostración.
+3. Comprueba que existan las tablas: usuarios, clientes, productos, codigos_producto, existencias, cotizaciones, cotizacion_partidas, ventas, venta_partidas y movimientos_inventario.
+4. El esquema no inserta cuentas ni datos de demostración. También crea `auth_setup` y `auth_tokens`.
+
+Para una base existente, respáldala y ejecuta una vez cada migración pendiente en orden: `src/main/resources/db/migrations/001-autenticacion-web.sql`, `src/main/resources/db/migrations/002-eliminacion-productos.sql` y `src/main/resources/db/migrations/003-codigos-automaticos-producto.sql`. Revisa [AUTHENTICATION.md](src/main/resources/db/AUTHENTICATION.md) y [las notas del esquema](src/main/resources/db/README.md).
+
+La base local `angur_gestion` de este paquete ya tiene aplicadas las migraciones `001`, `002` y `003`; no las ejecutes otra vez ahí. Se creó un respaldo antes de aplicar `003`.
 
 ### Configurar credenciales en PowerShell
 
-Usa `.env.example` como referencia. Configura las variables en la misma terminal desde la que ejecutarás la aplicación; Spring Boot no carga automáticamente un archivo `.env`:
+En la misma terminal desde la que ejecutarás la aplicación:
 
 ~~~powershell
 $env:DB_URL = 'jdbc:mysql://localhost:3306/angur_gestion?useUnicode=true&characterEncoding=UTF-8&serverTimezone=America/Mexico_City'
@@ -149,6 +186,12 @@ Después abre:
 - http://localhost:8080/productos — catálogo; requiere el rol autorizado.
 - http://localhost:8080/clientes — gestión de clientes; administrador y vendedor.
 - http://localhost:8080/inventario — existencias; administrador, vendedor y encargado de almacén.
+- http://localhost:8080/registro — registro de clientes.
+- http://localhost:8080/reenviar-verificacion — nuevo enlace de verificación.
+- http://localhost:8080/recuperar-clave — recuperación por correo.
+- http://localhost:8080/usuarios — administración de cuentas; solo administrador.
+
+Estos ejemplos corresponden al arranque Maven manual. Los archivos `iniciar-angur` usan el puerto 18080 por defecto.
 
 Para detener el servidor, usa Ctrl+C en la terminal donde ejecutaste Maven. Si Maven no puede descargar dependencias, revisa la conexión y vuelve a ejecutar el comando.
 
@@ -191,15 +234,46 @@ No hay solicitudes directas pendientes. En esta sesión se implementaron los mó
 
 ### Siguiente paso recomendado
 
-Siguiente paso: historial/auditoría y reportes, después de resolver las decisiones abiertas de cancelación y estados de cotización. Android sigue después de completar la web. Las tablas comerciales ya existen en el esquema actual; estas funciones no requirieron migración.
+Siguiente paso: historial/auditoría y reportes. Android continúa en una etapa posterior. Las tablas usadas por Cotizaciones y Ventas ya están en el esquema; estos módulos no requirieron migración.
 
-## 9. Verificación conocida
+## 9. Verificación de la restauración
 
-- El 18 de noviembre de 2026, el checkout principal compiló con `mvnw -DskipTests compile` después de implementar Cotizaciones y Ventas. No se ejecutó la suite de pruebas.
-- El paquete ejecutable compila con los módulos Cotizaciones y Ventas mediante `mvnw -DskipTests package`; no se ejecutaron pruebas.
-- Se respaldó la base local del paquete, se aplicó la migración `003-codigos-automaticos-producto.sql` y MySQL confirmó la tabla `codigos_producto`.
-- El paquete ejecutable arrancó de nuevo y `/login` respondió HTTP 200 en `localhost:18080`. No se creó un producto de prueba, por lo que el recorrido de alta y la reserva del primer código no se verificaron funcionalmente.
-- La migración `002-eliminacion-productos.sql` se había aplicado anteriormente a la base local del paquete. El esquema del paquete incluye ahora 12 tablas.
-- No se ejecutó la suite de pruebas en esta implementación.
-- La compilación confirma sintaxis y tipos Java, no el render de todas las vistas ni la operación de flujos con MySQL. No se registraron datos de demostración; quedan por verificar los recorridos de cotización y venta con productos reales.
-- No ejecutar la suite de pruebas salvo petición del usuario o inclusión en el plan de entrega.
+- Se descargó de nuevo el ZIP de `master`, revisión `c963fabbd92967abb3e401feb040b9d1d654589f`, y se reconstruyó el trabajo previo en una rama separada.
+- **20 pruebas aprobadas**, sin fallos ni omisiones: arranque y 19 comprobaciones de autenticación, incluidos los cinco perfiles.
+- MySQL real: alta inicial simultánea, registro y vínculo del cliente, duplicados, rollback ante fallo SMTP, verificación y recuperación, enlaces vencidos/reemitidos/usados y propósito del token.
+- Sesiones: cambio del identificador al autenticar, revocación tras restablecer/desactivar, logout, CSRF, permisos y límite de intentos.
+- Recorrido HTTP completo con correo real en Mailpit: configuración inicial, registro, verificación, login, recuperación, nueva contraseña y logout.
+- La migración se ejecutó sobre un esquema anterior con una cuenta sintética y conservó el usuario.
+- Chromium a 1440 y 390 px: login, registro, Bootstrap local, mostrar/ocultar contraseña y ausencia de desbordamiento horizontal o errores JavaScript.
+- Arrancador comprobado en Windows con MySQL local; el esquema tiene 12 tablas y el login respondió HTTP 200 en localhost:18080, abierto en Edge el 18 de noviembre de 2026.
+- La migración `002-eliminacion-productos.sql` se aplicó a esa base local después de crear un respaldo. MySQL confirmó las tres referencias `ON DELETE SET NULL` y las instantáneas no nulas de los movimientos existentes.
+- El paquete ejecutable compila con Cotizaciones y Ventas mediante `mvnw -DskipTests package` (sin ejecutar pruebas). Los flujos autenticados con datos MySQL deben verificarse manualmente.
+- El 18 de noviembre de 2026, ambos árboles compilaron con Clientes, Inventario y códigos automáticos de productos; el paquete se reconstruyó con `mvnw -DskipTests package` y arrancó de nuevo. `/login` respondió HTTP 200 en `localhost:18080`. La migración `003` se aplicó después de respaldar la base y la tabla existe; no se creó un producto de prueba, así que el alta con código generado no se comprobó funcionalmente.
+- No se comprobaron proveedor SMTP externo ni despliegue productivo. No se ejecutaron pruebas para Cotizaciones y Ventas; los flujos autenticados siguen pendientes de verificación con datos reales de producto.
+
+Con un JDK 21 completo y Docker, ejecuta `./mvnw test`. La suite usa una MySQL aislada mediante Testcontainers. Para una base **exclusiva de pruebas** ya preparada, puedes definir `ANGUR_TEST_DB_URL`, `ANGUR_TEST_DB_USER` y `ANGUR_TEST_DB_PASSWORD`; su nombre debe terminar en `_test`. La suite elimina sus registros antes de cada caso: nunca uses una base de trabajo.
+
+En este entorno se utilizó un proxy temporal para Maven y `-Dmaven.compiler.release= -Dmaven.compiler.source=21 -Dmaven.compiler.target=21`, porque el JDK reducido carece de `ct.sym`. Las pruebas se ejecutaron en una base `_test` aislada de MySQL 8.4. Estas adaptaciones no cambian el POM.
+
+## 10. Cuentas y correo
+
+- Solo CLIENTE puede registrarse públicamente. Un campo manipulado no permite elegir perfiles internos.
+- El administrador crea las cuentas y asigna su perfil. Toda cuenta nueva requiere verificar el correo.
+- El primer administrador se habilita mediante `/setup` durante la instalación, sin depender de SMTP. La excepción no aplica a registros posteriores.
+- Verificación: 24 horas; recuperación: 30 minutos. Reenviar invalida el enlace anterior. Abrirlo no cambia datos; hay que confirmar el formulario.
+- La recuperación usa el mismo mensaje para cuentas existentes y desconocidas. Los logs no contienen contraseñas ni enlaces.
+- El límite de solicitudes es por instancia y se reinicia al reiniciar el proceso. Varias réplicas requieren un límite compartido en su proxy o servicio de acceso.
+
+### Buzón local
+
+Copia `.env.example` a `.env`, configura claves y ejecuta `docker compose up -d`. MySQL y Mailpit quedan accesibles solo desde la máquina local; un volumen MySQL vacío recibe el esquema al inicializarse. Los archivos `iniciar-angur` cargan las variables automáticamente.
+
+Abre http://localhost:8025 para leer los correos. Mailpit captura los mensajes y no los envía a destinatarios externos. `docker compose stop` detiene los servicios y conserva los datos del volumen.
+
+El arranque Maven manual no lee `.env`. En Bash puedes cargarlo con `set -a`, `. ./.env` y `set +a` antes de ejecutar `./mvnw spring-boot:run`. En PowerShell, configura las variables `$env:DB_URL`, `$env:DB_USER`, `$env:DB_PASSWORD` y las de correo en esa terminal.
+
+### Correo real y producción
+
+Configura fuera de Git `AUTH_MAIL_ENABLED=true`, `AUTH_MAIL_FROM`, `AUTH_BASE_URL`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_AUTH` y `SMTP_STARTTLS` o `SMTP_SSL` según el proveedor. Los valores de ejemplo son para Mailpit. Un fallo SMTP revierte el alta/emisión y permite repetir la operación.
+
+Para acceso público, usa HTTPS en `AUTH_BASE_URL`, TLS en el servidor/proxy y `SESSION_COOKIE_SECURE=true`. Los enlaces nunca se construyen a partir del encabezado Host. Consulta [las notas de autenticación](src/main/resources/db/AUTHENTICATION.md).

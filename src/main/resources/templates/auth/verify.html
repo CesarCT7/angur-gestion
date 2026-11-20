@@ -1,0 +1,8 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(${pageTitle})}"></head>
+<body class="login-page setup-page"><main class="setup-shell auth-narrow"><section class="setup-card">
+<a th:replace="~{auth/fields :: brand}"></a>
+<div class="alert alert-danger" role="alert" th:if="${formError}" th:text="${formError}"></div>
+<h1>Verifica tu correo</h1><div th:if="${tokenValid}"><p>Confirma tu correo para empezar a usar tu cuenta.</p><form th:action="@{/verificar-correo}" method="post"><input type="hidden" name="token" th:value="${token}"><button class="btn btn-angur-primary w-100" type="submit">Verificar mi correo</button></form></div><div th:unless="${tokenValid}"><p>El enlace no es válido, ya se utilizó o ha vencido.</p><a class="btn btn-angur-primary" th:href="@{/reenviar-verificacion}">Solicitar otro enlace</a></div><a class="back-link" th:href="@{/login}">Volver a iniciar sesión</a>
+</section></main></body></html>

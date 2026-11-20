@@ -39,3 +39,6 @@ build/
 !.env.example
 application-local.properties
 *.log
+
+# Compiled launcher only included in local distribution archives
+/scripts/iniciador.jar

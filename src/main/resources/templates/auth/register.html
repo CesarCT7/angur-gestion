@@ -1,0 +1,8 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(${pageTitle})}"></head>
+<body class="login-page setup-page"><main class="setup-shell "><section class="setup-card">
+<a th:replace="~{auth/fields :: brand}"></a>
+<div class="alert alert-danger" role="alert" th:if="${formError}" th:text="${formError}"></div>
+<h1>Crea tu cuenta de cliente</h1><p class="text-secondary">Consulta tus cotizaciones y compras. Te enviaremos un enlace para verificar tu correo.</p><form th:action="@{/registro}" th:object="${form}" method="post" class="setup-form" novalidate><div class="alert alert-danger" role="alert" th:if="${#fields.hasErrors('*')}">Revisa los campos marcados antes de continuar.</div><div th:replace="~{auth/fields :: accountFields('register')}"></div><button class="btn btn-angur-primary w-100" type="submit">Crear mi cuenta</button></form><a class="back-link" th:href="@{/login}">Volver a iniciar sesión</a>
+</section></main></body></html>

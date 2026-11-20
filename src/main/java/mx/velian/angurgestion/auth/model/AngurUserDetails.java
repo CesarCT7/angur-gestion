@@ -1,11 +1,11 @@
 package mx.velian.angurgestion.auth.model;
 
-import java.util.Collection;
-import java.util.List;
-
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+
+import java.util.Collection;
+import java.util.List;
 
 public final class AngurUserDetails implements UserDetails {
     private final UserAccount account;
@@ -16,6 +16,10 @@ public final class AngurUserDetails implements UserDetails {
 
     public long getId() {
         return account.id();
+    }
+
+    public long getSessionVersion() {
+        return account.sessionVersion();
     }
 
     public String getDisplayName() {
@@ -62,6 +66,6 @@ public final class AngurUserDetails implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return account.active();
+        return account.active() && account.emailVerified();
     }
 }

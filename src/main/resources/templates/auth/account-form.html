@@ -1,0 +1,8 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(${pageTitle})}"></head>
+<body class="app-page"><div class="app-shell"><aside th:replace="~{fragments/sidebar :: sidebar}"></aside>
+<main class="main-content"><header th:replace="~{fragments/topbar :: topbar}"></header><div class="content-wrap">
+<div class="alert alert-danger" role="alert" th:if="${formError}" th:text="${formError}"></div>
+<div class="alert alert-success" role="status" th:if="${successMessage}" th:text="${successMessage}"></div>
+<section class="page-heading"><div><p class="eyebrow">Administración</p><h1>Crear cuenta</h1><p class="page-subtitle">Asigna un perfil. La persona debe verificar su correo antes de entrar.</p></div></section><section class="panel-card product-form-panel"><form th:action="@{/usuarios/nuevo}" th:object="${form}" method="post" novalidate><div class="alert alert-danger" role="alert" th:if="${#fields.hasErrors('*')}">Revisa los campos marcados antes de continuar.</div><div th:replace="~{auth/fields :: accountFields('admin')}"></div><div class="form-actions"><a class="btn btn-outline-angur" th:href="@{/usuarios}">Cancelar</a><button class="btn btn-angur-primary" type="submit">Crear cuenta</button></div></form></section></div></main></div></body></html>

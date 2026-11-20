@@ -7,5 +7,6 @@ public record UserAccount(
         String name,
         String passwordHash,
         UserRole role,
-        boolean active) {
-}
+        boolean active,
+        boolean emailVerified,
+        long sessionVersion) {}

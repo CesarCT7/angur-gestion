@@ -23,7 +23,7 @@ No se agregan usuarios iniciales ni datos ficticios. Las contraseñas deben inse
 - Los movimientos guardan instantáneas de código y nombre; eliminar un producto no borra los movimientos.
 - Para bases existentes, respalda y ejecuta una sola vez cada migración pendiente en orden: [`migrations/002-eliminacion-productos.sql`](migrations/002-eliminacion-productos.sql) y [`migrations/003-codigos-automaticos-producto.sql`](migrations/003-codigos-automaticos-producto.sql).
 
-La base local `angur_gestion` usada por el paquete ejecutable ya tiene aplicadas las migraciones `002` y `003`; no las vuelvas a ejecutar ahí.
+La base local `angur_gestion` usada por el paquete ejecutable ya tiene aplicadas las migraciones `001`, `002` y `003`; no las vuelvas a ejecutar ahí.
 
 ## Decisiones de negocio que siguen abiertas
 
@@ -33,3 +33,7 @@ La base local `angur_gestion` usada por el paquete ejecutable ya tiene aplicadas
 - Los importes usan `DECIMAL(13,2)`. La moneda no se guarda por separado porque los documentos no fijan explícitamente una política de moneda.
 
 Los totales de encabezado deben calcularse desde las partidas en el backend. MySQL valida cada subtotal individual, pero el backend debe validar que el total de la cotización o venta coincida con la suma de sus partidas.
+
+## Autenticación web
+
+El esquema nuevo incluye `auth_setup` y `auth_tokens`. Para actualizar una instalación anterior, respáldala y sigue [AUTHENTICATION.md](AUTHENTICATION.md).

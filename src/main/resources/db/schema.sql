@@ -22,6 +22,8 @@ CREATE TABLE usuarios (
                         'ENCARGADO_ALMACEN'
                     ) NOT NULL,
     activo          BOOLEAN NOT NULL DEFAULT TRUE,
+    correo_verificado BOOLEAN NOT NULL DEFAULT FALSE,
+    version_sesion BIGINT NOT NULL DEFAULT 0,
     creado_en       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     actualizado_en  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
@@ -209,4 +211,25 @@ CREATE TABLE movimientos_inventario (
     INDEX ix_movimientos_producto_fecha (producto_id, fecha),
     INDEX ix_movimientos_usuario_fecha (usuario_id, fecha),
     INDEX ix_movimientos_venta (venta_id)
+) ENGINE = InnoDB;
+
+
+-- Una fila bloqueada hasta el COMMIT evita dos administradores iniciales.
+CREATE TABLE auth_setup (
+    id TINYINT NOT NULL PRIMARY KEY,
+    completado BOOLEAN NOT NULL DEFAULT FALSE,
+    CONSTRAINT chk_auth_setup_id CHECK (id = 1)
+) ENGINE = InnoDB;
+INSERT INTO auth_setup (id, completado) VALUES (1, FALSE);
+CREATE TABLE auth_tokens (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    usuario_id BIGINT UNSIGNED NOT NULL,
+    token_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+    proposito ENUM('VERIFICAR_CORREO', 'RESTABLECER_CLAVE') NOT NULL,
+    vence_en TIMESTAMP(6) NOT NULL,
+    usado_en TIMESTAMP(6) NULL,
+    creado_en TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    CONSTRAINT uq_auth_token_hash UNIQUE (token_hash),
+    CONSTRAINT fk_auth_tokens_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE RESTRICT,
+    INDEX ix_auth_tokens_usuario (usuario_id, proposito, usado_en)
 ) ENGINE = InnoDB;

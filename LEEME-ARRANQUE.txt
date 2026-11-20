@@ -1,0 +1,24 @@
+ANGUR GESTIÓN — PAQUETE LOCAL RESTAURADO
+
+1. Usa "Extraer todo" para extraer TODO el ZIP a una carpeta.
+2. Inicia tu servicio MySQL y comprueba que tengas Java 21.
+3. Abre iniciar-angur.cmd con doble clic y deja su ventana abierta.
+
+El paquete incluye la aplicación y el arrancador compilados. Para tu
+MySQL existente no necesitas Maven, VS Code ni Docker.
+El archivo privado .env utiliza el usuario root y la contraseña que
+proporcionaste. Si tu usuario es otro, cambia DB_USER en .env.
+La contraseña del servidor MySQL no se modifica.
+
+Si no existe la base o sus tablas, ejecuta src/main/resources/db/schema.sql
+en MySQL Workbench. Para el esquema anterior, respalda la base y revisa
+src/main/resources/db/migrations/001-autenticacion-web.sql.
+
+El login se abre en http://localhost:18080/login después de arrancar aquí.
+Localhost se refiere a TU computadora, no al entorno remoto de Codex.
+
+Si falla, la ventana mantiene el error visible. Copia el detalle guardado
+en .tmp/arranque.log. También puedes ejecutar iniciar-angur.cmd --check.
+
+El correo está desactivado hasta configurar SMTP o Mailpit en tu equipo.
+El primer administrador se crea en /setup sin depender del correo.
