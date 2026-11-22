@@ -40,6 +40,7 @@ public class SecurityConfig {
                                                 "/login",
                                                 "/setup",
                                                 "/registro",
+                                                "/recuperar-acceso",
                                                 "/verificar-correo",
                                                 "/reenviar-verificacion",
                                                 "/recuperar-clave",

@@ -128,6 +128,16 @@ public class AccountServiceImpl implements AccountService {
                         });
     }
 
+    @Transactional
+    public void requestAccess(String email) {
+        users.findByEmail(email)
+                .ifPresent(
+                        candidate -> {
+                            UserAccount user = users.lockById(candidate.id()).orElseThrow();
+                            if (user.active()) issue(user, user.emailVerified() ? RESET : VERIFY);
+                        });
+    }
+
     private void issue(UserAccount user, String purpose) {
         byte[] bytes = new byte[32];
         random.nextBytes(bytes);

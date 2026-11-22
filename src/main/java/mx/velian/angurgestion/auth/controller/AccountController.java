@@ -20,8 +20,8 @@ import java.util.Objects;
 @Controller
 public class AccountController {
     private static final String SENT =
-            "Si el correo corresponde a una cuenta que puede usar esta función, recibirás un"
-                + " enlace. Revisa también el correo no deseado.";
+            "Si la cuenta está activa, recibirás un enlace para verificar tu correo o restablecer"
+                + " tu contraseña. Revisa también el correo no deseado.";
     private static final String UNAVAILABLE =
             "El servicio no está disponible en este momento. Inténtalo más tarde.";
     private final AccountService accounts;
@@ -74,36 +74,29 @@ public class AccountController {
         return "auth/register";
     }
 
-    private boolean verification(HttpServletRequest request) {
-        return request.getRequestURI().equals(request.getContextPath() + "/reenviar-verificacion");
+    private void emailPage(Model model) {
+        model.addAttribute("pageTitle", "Recuperar acceso");
+        model.addAttribute("formAction", "/recuperar-acceso");
     }
 
-    private void emailPage(Model model, boolean verify) {
-        model.addAttribute("verification", verify);
-        model.addAttribute("pageTitle", verify ? "Verificar mi correo" : "Recuperar contraseña");
-        model.addAttribute("formAction", verify ? "/reenviar-verificacion" : "/recuperar-clave");
-    }
-
-    @GetMapping({"/recuperar-clave", "/reenviar-verificacion"})
-    public String emailForm(HttpServletRequest request, Model model) {
-        emailPage(model, verification(request));
+    @GetMapping({"/recuperar-acceso", "/recuperar-clave", "/reenviar-verificacion"})
+    public String emailForm(Model model) {
+        emailPage(model);
         model.addAttribute("form", new EmailForm());
         return "auth/email-request";
     }
 
-    @PostMapping({"/recuperar-clave", "/reenviar-verificacion"})
+    @PostMapping({"/recuperar-acceso", "/recuperar-clave", "/reenviar-verificacion"})
     public String emailRequest(
             @Valid @ModelAttribute("form") EmailForm form,
             BindingResult errors,
             HttpServletRequest request,
             Model model) {
-        boolean verify = verification(request);
-        emailPage(model, verify);
-        if (!allow(request, verify ? "verify-email" : "forgot-password", model)
+        emailPage(model);
+        if (!allow(request, "recover-access", model)
                 || errors.hasErrors()) return "auth/email-request";
         try {
-            if (verify) accounts.requestVerification(form.getEmail());
-            else accounts.requestPasswordReset(form.getEmail());
+            accounts.requestAccess(form.getEmail());
             model.addAttribute("successMessage", SENT);
         } catch (AuthOperationException error) {
             model.addAttribute("successMessage", SENT);

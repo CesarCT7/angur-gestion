@@ -56,8 +56,8 @@ La base MySQL es la fuente de datos prevista. No se guardan credenciales de acce
 - Contraseñas almacenadas con BCrypt.
 - Alta inicial del administrador en /setup, protegida mediante bloqueo transaccional frente a solicitudes simultáneas.
 - Registro público exclusivo para clientes, con fila de cliente vinculada y verificación de correo antes del primer acceso.
-- Creación de cuentas de los cinco perfiles y activación/desactivación desde /usuarios, solo para administradores.
-- Verificación y recuperación/restablecimiento con enlaces aleatorios de un solo uso: 24 horas para verificar, 30 minutos para recuperar. Solo se almacena su hash.
+- Creación de cuentas de los cinco perfiles, incluidos administradores adicionales, y activación/desactivación desde `/usuarios`, solo para administradores autenticados.
+- Recuperación de acceso desde una sola opción del login: envía verificación si el correo aún no está verificado, o recuperación de contraseña si ya lo está. Los enlaces son aleatorios, de un solo uso y vencen en 24 horas (verificación) o 30 minutos (contraseña); solo se almacena su hash.
 - Sesiones de 20 minutos, revocación tras restablecer contraseña o desactivar una cuenta, CSRF y límite de solicitudes.
 - Validación por bytes compatible con BCrypt y errores junto a cada campo.
 - Roles reconocidos por el modelo: ADMINISTRADOR, VENDEDOR, CLIENTE, SUPERVISOR_VENTAS y ENCARGADO_ALMACEN.
@@ -187,9 +187,9 @@ Después abre:
 - http://localhost:8080/clientes — gestión de clientes; administrador y vendedor.
 - http://localhost:8080/inventario — existencias; administrador, vendedor y encargado de almacén.
 - http://localhost:8080/registro — registro de clientes.
-- http://localhost:8080/reenviar-verificacion — nuevo enlace de verificación.
-- http://localhost:8080/recuperar-clave — recuperación por correo.
+- http://localhost:8080/recuperar-acceso — verificación o recuperación de contraseña según el estado de la cuenta.
 - http://localhost:8080/usuarios — administración de cuentas; solo administrador.
+- http://localhost:8080/usuarios/nuevo — crear cuentas, incluidos administradores adicionales; requiere una sesión de administrador.
 
 Estos ejemplos corresponden al arranque Maven manual. Los archivos `iniciar-angur` usan el puerto 18080 por defecto.
 
@@ -199,12 +199,14 @@ Para detener el servidor, usa Ctrl+C en la terminal donde ejecutaste Maven. Si M
 
 ~~~text
 src/main/java/mx/velian/angurgestion/
-├── auth/          # acceso, cuentas, roles y configuración del primer administrador
+├── auth/          # acceso, recuperación, cuentas y roles
 ├── client/        # clientes y asociación opcional con cuenta
 ├── config/        # configuración de Spring Security
 ├── dashboard/     # resumen principal
 ├── inventory/     # existencias y movimientos transaccionales
 ├── product/       # catálogo y persistencia JDBC de productos
+├── quotation/     # cotizaciones y precios congelados
+├── sale/          # ventas transaccionales y movimientos de inventario
 └── shared/        # componentes compartidos de MVC
 
 src/main/resources/
@@ -230,7 +232,7 @@ Esta sección define el proceso para futuras peticiones de código:
 
 ### Solicitudes directas del usuario pendientes
 
-No hay solicitudes directas pendientes. En esta sesión se implementaron los módulos web iniciales de Cotizaciones y Ventas, además de los cambios anteriores en Productos, Clientes e Inventario.
+No hay solicitudes directas pendientes. En esta sesión se unificó la recuperación de acceso y se aclaró cómo crear administradores adicionales; también quedaron implementados los módulos web iniciales de Cotizaciones y Ventas.
 
 ### Siguiente paso recomendado
 
@@ -248,6 +250,7 @@ Siguiente paso: historial/auditoría y reportes. Android continúa en una etapa 
 - Arrancador comprobado en Windows con MySQL local; el esquema tiene 12 tablas y el login respondió HTTP 200 en localhost:18080, abierto en Edge el 18 de noviembre de 2026.
 - La migración `002-eliminacion-productos.sql` se aplicó a esa base local después de crear un respaldo. MySQL confirmó las tres referencias `ON DELETE SET NULL` y las instantáneas no nulas de los movimientos existentes.
 - El paquete ejecutable compila con Cotizaciones y Ventas mediante `mvnw -DskipTests package` (sin ejecutar pruebas). Los flujos autenticados con datos MySQL deben verificarse manualmente.
+- El 21 de noviembre de 2026, la versión ejecutable recompiló con `mvnw -DskipTests package`. `/login`, `/recuperar-acceso` y sus dos rutas anteriores de compatibilidad respondieron HTTP 200; la pantalla enlaza una sola opción de recuperación. No se enviaron correos ni se probó crear una cuenta administradora autenticada en esta sesión.
 - El 18 de noviembre de 2026, ambos árboles compilaron con Clientes, Inventario y códigos automáticos de productos; el paquete se reconstruyó con `mvnw -DskipTests package` y arrancó de nuevo. `/login` respondió HTTP 200 en `localhost:18080`. La migración `003` se aplicó después de respaldar la base y la tabla existe; no se creó un producto de prueba, así que el alta con código generado no se comprobó funcionalmente.
 - No se comprobaron proveedor SMTP externo ni despliegue productivo. No se ejecutaron pruebas para Cotizaciones y Ventas; los flujos autenticados siguen pendientes de verificación con datos reales de producto.
 
@@ -257,10 +260,10 @@ En este entorno se utilizó un proxy temporal para Maven y `-Dmaven.compiler.rel
 
 ## 10. Cuentas y correo
 
-- Solo CLIENTE puede registrarse públicamente. Un campo manipulado no permite elegir perfiles internos.
-- El administrador crea las cuentas y asigna su perfil. Toda cuenta nueva requiere verificar el correo.
+- Solo CLIENTE puede registrarse públicamente. Un campo manipulado no permite elegir perfiles internos ni elevar privilegios.
+- Un administrador autenticado puede crear cuentas de los cinco perfiles, incluidos otros administradores, desde `/usuarios/nuevo`. Toda cuenta nueva requiere verificar el correo.
 - El primer administrador se habilita mediante `/setup` durante la instalación, sin depender de SMTP. La excepción no aplica a registros posteriores.
-- Verificación: 24 horas; recuperación: 30 minutos. Reenviar invalida el enlace anterior. Abrirlo no cambia datos; hay que confirmar el formulario.
+- `/recuperar-acceso` elige el flujo según el estado de la cuenta: verificación (24 horas) para cuentas aún no verificadas o cambio de contraseña (30 minutos) para cuentas verificadas. Una sola opción reemplaza los enlaces separados del login. Solicitar uno nuevo invalida el anterior. Abrirlo no cambia datos; hay que confirmar el formulario.
 - La recuperación usa el mismo mensaje para cuentas existentes y desconocidas. Los logs no contienen contraseñas ni enlaces.
 - El límite de solicitudes es por instancia y se reinicia al reiniciar el proceso. Varias réplicas requieren un límite compartido en su proxy o servicio de acceso.
 

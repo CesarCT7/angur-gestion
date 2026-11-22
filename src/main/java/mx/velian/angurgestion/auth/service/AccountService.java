@@ -14,6 +14,8 @@ public interface AccountService {
 
     void requestPasswordReset(String email);
 
+    void requestAccess(String email);
+
     boolean isTokenValid(String token, String purpose);
 
     void verifyEmail(String token);

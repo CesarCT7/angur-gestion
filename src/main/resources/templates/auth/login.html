@@ -47,8 +47,9 @@
             <button class="btn btn-angur-login w-100" type="submit">Iniciar sesión</button>
         </form>
 
-        <nav class="auth-links" aria-label="Opciones de acceso"><a th:href="@{/recuperar-clave}">Olvidé mi contraseña</a><a th:href="@{/registro}">Crear cuenta de cliente</a><a th:href="@{/reenviar-verificacion}">Reenviar verificación</a></nav>
-        <p class="login-footer">¿Es la primera vez que usas Angur Gestión? <a th:href="@{/setup}">Configurar el administrador</a></p>
+        <nav class="auth-links" aria-label="Opciones de acceso"><a th:href="@{/recuperar-acceso}">Recuperar acceso</a><a th:href="@{/registro}">Crear cuenta de cliente</a></nav>
+        <p class="login-footer">Primera instalación: <a th:href="@{/setup}">configurar el administrador inicial</a> (solo cuando la base no tiene cuentas).</p>
+        <p class="login-footer">Para crear administradores adicionales, inicia sesión con una cuenta administradora y usa <strong>Usuarios → Crear cuenta</strong>.</p>
     </section>
 </main>
 <script th:src="@{/vendor/bootstrap/bootstrap.bundle.min.js}"

@@ -4,7 +4,7 @@
 <body class="login-page setup-page"><main class="setup-shell auth-narrow"><section class="setup-card">
 <a th:replace="~{auth/fields :: brand}"></a>
 <div class="alert alert-danger" role="alert" th:if="${formError}" th:text="${formError}"></div>
-<h1 th:text="${pageTitle}"></h1><p class="text-secondary" th:text="${verification} ? 'Escribe tu correo para recibir otro enlace de verificación.' : 'Te enviaremos un enlace para elegir una nueva contraseña.'"></p>
+<h1 th:text="${pageTitle}"></h1><p class="text-secondary">Escribe el correo de tu cuenta. Si aún no está verificada, enviaremos un enlace de verificación; si ya está verificada, enviaremos un enlace para cambiar la contraseña.</p>
 <div class="alert alert-success" role="status" th:if="${successMessage}" th:text="${successMessage}"></div>
 <form th:action="${formAction}" th:object="${form}" method="post" class="setup-form" novalidate><label class="form-label" for="email">Correo electrónico</label><input class="form-control" id="email" th:field="*{email}" th:errorclass="is-invalid" type="email" maxlength="254" autocomplete="email" required aria-describedby="email-error"><div class="field-error" id="email-error" th:errors="*{email}"></div><button class="btn btn-angur-primary w-100 mt-4" type="submit">Enviar enlace</button></form><a class="back-link" th:href="@{/login}">Volver a iniciar sesión</a>
 </section></main></body></html>
