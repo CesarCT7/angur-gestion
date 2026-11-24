@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+<nav th:fragment="tabs(activeTab)" class="analysis-tabs nav nav-pills" aria-label="Secciones de Análisis y control">
+    <a class="nav-link" th:classappend="${activeTab == 'history'} ? ' active' : ''" th:href="@{/historial}"
+       th:attr="aria-current=${activeTab == 'history'} ? 'page' : null">Historial y auditoría</a>
+    <a class="nav-link" th:classappend="${activeTab == 'reports'} ? ' active' : ''" th:href="@{/reportes}"
+       th:attr="aria-current=${activeTab == 'reports'} ? 'page' : null">Reportes y ganancias</a>
+</nav>
+</body>
+</html>

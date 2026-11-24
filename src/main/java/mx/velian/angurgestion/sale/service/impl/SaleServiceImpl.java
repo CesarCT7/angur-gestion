@@ -16,7 +16,6 @@ import mx.velian.angurgestion.auth.model.UserRole;
 import mx.velian.angurgestion.inventory.dao.InventoryRepository;
 import mx.velian.angurgestion.inventory.model.InventoryItem;
 import mx.velian.angurgestion.quotation.dao.QuoteRepository;
-import mx.velian.angurgestion.quotation.model.QuoteClientOption;
 import mx.velian.angurgestion.quotation.model.QuoteDetail;
 import mx.velian.angurgestion.quotation.model.QuoteProductOption;
 import mx.velian.angurgestion.product.dao.ProductRepository;
@@ -31,6 +30,7 @@ import mx.velian.angurgestion.sale.model.SaleResult;
 import mx.velian.angurgestion.sale.model.SaleStatus;
 import mx.velian.angurgestion.sale.model.SaleSummary;
 import mx.velian.angurgestion.sale.service.SaleService;
+import mx.velian.angurgestion.audit.service.AuditTrail;
 
 @Service
 public class SaleServiceImpl implements SaleService {
@@ -38,13 +38,15 @@ public class SaleServiceImpl implements SaleService {
     private final QuoteRepository quotes;
     private final ProductRepository products;
     private final InventoryRepository inventory;
+    private final AuditTrail audit;
 
     public SaleServiceImpl(SaleRepository sales, QuoteRepository quotes, ProductRepository products,
-                           InventoryRepository inventory) {
+                           InventoryRepository inventory, AuditTrail audit) {
         this.sales = sales;
         this.quotes = quotes;
         this.products = products;
         this.inventory = inventory;
+        this.audit=audit;
     }
 
     @Override
@@ -59,7 +61,6 @@ public class SaleServiceImpl implements SaleService {
     @Override public Optional<SaleDetail> findById(long id, UserRole role, long userId) {
         return sales.findById(id, role, userId);
     }
-    @Override public List<QuoteClientOption> findActiveClients() { return quotes.findActiveClients(); }
     @Override public List<QuoteProductOption> findActiveProducts() { return quotes.findActiveProducts(); }
 
     @Override
@@ -96,8 +97,7 @@ public class SaleServiceImpl implements SaleService {
                 drafts.add(new LineDraft(product, line.quantity(), line.unitPrice()));
             }
         } else {
-            clientId = form.getClientId();
-            if (clientId != null && !quotes.isActiveClient(clientId)) throw new InvalidSaleException("Selecciona un cliente activo.");
+            clientId = null;
             if (form.getItems() == null || form.getItems().isEmpty()) throw new InvalidSaleException("Agrega al menos un producto.");
             drafts = new ArrayList<>();
             Set<Long> unique = new HashSet<>();
@@ -150,6 +150,7 @@ public class SaleServiceImpl implements SaleService {
             sales.insertMovement(saleId, item.id(), item.code(), item.name(), sellerId, draft.quantity(), resultingStock,
                     form.getOperationKey() + ":" + item.id());
         }
+        audit.record(sellerId,"VENTA",Long.toString(saleId),"REGISTRAR","Se registró la venta #"+saleId+" con "+ordered.size()+" productos por un total de $"+total+".");
         return new SaleResult(saleId, total, false);
     }
 

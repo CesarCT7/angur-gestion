@@ -1,0 +1,14 @@
+FROM maven:3.9.11-eclipse-temurin-21 AS build
+WORKDIR /workspace
+
+COPY .mvn .mvn
+COPY mvnw pom.xml ./
+COPY src src
+RUN chmod +x mvnw && ./mvnw -Pvercel -B -DskipTests package
+
+FROM eclipse-temurin:21-jre
+WORKDIR /app
+ENV PORT=80
+COPY --from=build /workspace/target/angur-gestion-0.0.1-SNAPSHOT.jar /app/angur-gestion.jar
+EXPOSE 80
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=70", "-jar", "/app/angur-gestion.jar"]

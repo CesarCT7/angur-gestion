@@ -17,7 +17,6 @@ import org.springframework.stereotype.Repository;
 
 import mx.velian.angurgestion.auth.model.UserRole;
 import mx.velian.angurgestion.quotation.dao.QuoteRepository;
-import mx.velian.angurgestion.quotation.model.QuoteClientOption;
 import mx.velian.angurgestion.quotation.model.QuoteDetail;
 import mx.velian.angurgestion.quotation.model.QuoteLine;
 import mx.velian.angurgestion.quotation.model.QuoteProductOption;
@@ -28,12 +27,12 @@ import mx.velian.angurgestion.quotation.model.QuoteSummary;
 public class JdbcQuoteRepository implements QuoteRepository {
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
     private static final String HEADER_SELECT = """
-            SELECT q.id, q.cliente_id, c.nombre_razon_social AS cliente,
+            SELECT q.id, q.cliente_id, COALESCE(c.nombre_razon_social, 'Sin cliente') AS cliente,
                    c.correo AS cliente_correo, c.telefono AS cliente_telefono,
                    q.vendedor_id, u.nombre AS vendedor, q.estado, q.observaciones,
                    q.emitida_en, q.total, v.id AS venta_id
             FROM cotizaciones q
-            JOIN clientes c ON c.id = q.cliente_id
+            LEFT JOIN clientes c ON c.id = q.cliente_id
             JOIN usuarios u ON u.id = q.vendedor_id
             LEFT JOIN ventas v ON v.cotizacion_id = q.id
             """;
@@ -45,24 +44,16 @@ public class JdbcQuoteRepository implements QuoteRepository {
 
     @Override
     public List<QuoteSummary> findAll(String search, QuoteStatus status, UserRole role, long userId) {
-        StringBuilder sql = new StringBuilder("""
-                SELECT q.id, q.emitida_en, c.nombre_razon_social AS cliente, u.nombre AS vendedor,
-                       q.estado, q.total, v.id AS venta_id
-                FROM cotizaciones q
-                JOIN clientes c ON c.id = q.cliente_id
-                JOIN usuarios u ON u.id = q.vendedor_id
-                LEFT JOIN ventas v ON v.cotizacion_id = q.id
-                WHERE 1 = 1
-                """);
+        StringBuilder sql = new StringBuilder(HEADER_SELECT).append(" WHERE 1 = 1");
         java.util.ArrayList<Object> args = new java.util.ArrayList<>();
         addScope(sql, args, role, userId);
         String term = search == null ? "" : search.trim();
         if (!term.isEmpty()) {
-            sql.append(" AND (CAST(q.id AS CHAR) LIKE ? OR c.nombre_razon_social LIKE ? OR EXISTS (")
+            sql.append(" AND (CAST(q.id AS CHAR) LIKE ? OR EXISTS (")
                     .append("SELECT 1 FROM cotizacion_partidas cp WHERE cp.cotizacion_id = q.id ")
                     .append("AND (cp.codigo_producto LIKE ? OR cp.nombre_producto LIKE ?)))");
             String like = "%" + term + "%";
-            args.add(like); args.add(like); args.add(like); args.add(like);
+            args.add(like); args.add(like); args.add(like);
         }
         if (status != null) { sql.append(" AND q.estado = ?"); args.add(status.name()); }
         sql.append(" ORDER BY q.emitida_en DESC, q.id DESC");
@@ -98,14 +89,6 @@ public class JdbcQuoteRepository implements QuoteRepository {
     }
 
     @Override
-    public List<QuoteClientOption> findActiveClients() {
-        return jdbc.query("""
-                SELECT id, nombre_razon_social FROM clientes WHERE activo = TRUE
-                ORDER BY nombre_razon_social
-                """, (rs, row) -> new QuoteClientOption(rs.getLong("id"), rs.getString("nombre_razon_social")));
-    }
-
-    @Override
     public List<QuoteProductOption> findActiveProducts() {
         return jdbc.query("""
                 SELECT id, codigo, nombre, precio_venta_actual FROM productos
@@ -122,23 +105,16 @@ public class JdbcQuoteRepository implements QuoteRepository {
     }
 
     @Override
-    public boolean isActiveClient(long id) {
-        Integer count = jdbc.queryForObject("SELECT COUNT(*) FROM clientes WHERE id = ? AND activo = TRUE", Integer.class, id);
-        return count != null && count > 0;
-    }
-
-    @Override
-    public long insertHeader(long clientId, long sellerId, String observations, BigDecimal total) {
+    public long insertHeader(long sellerId, String observations, BigDecimal total) {
         KeyHolder holder = new GeneratedKeyHolder();
         jdbc.update(connection -> {
             PreparedStatement statement = connection.prepareStatement("""
-                    INSERT INTO cotizaciones (cliente_id, vendedor_id, estado, observaciones, total)
-                    VALUES (?, ?, 'PENDIENTE', ?, ?)
+                    INSERT INTO cotizaciones (vendedor_id, estado, observaciones, total)
+                    VALUES (?, 'PENDIENTE', ?, ?)
                     """, Statement.RETURN_GENERATED_KEYS);
-            statement.setLong(1, clientId);
-            statement.setLong(2, sellerId);
-            statement.setString(3, observations == null || observations.isBlank() ? null : observations.trim());
-            statement.setBigDecimal(4, total);
+            statement.setLong(1, sellerId);
+            statement.setString(2, observations == null || observations.isBlank() ? null : observations.trim());
+            statement.setBigDecimal(3, total);
             return statement;
         }, holder);
         Number id = holder.getKey();
@@ -168,7 +144,7 @@ public class JdbcQuoteRepository implements QuoteRepository {
     }
 
     private QuoteDetail mapDetailHeader(ResultSet rs, int row) throws SQLException {
-        return new QuoteDetail(rs.getLong("id"), rs.getLong("cliente_id"), rs.getString("cliente"),
+        return new QuoteDetail(rs.getLong("id"), nullableLong(rs, "cliente_id"), rs.getString("cliente"),
                 rs.getString("cliente_correo"), rs.getString("cliente_telefono"), rs.getLong("vendedor_id"),
                 rs.getString("vendedor"), QuoteStatus.valueOf(rs.getString("estado")), format(rs, "emitida_en"),
                 rs.getString("observaciones"), rs.getBigDecimal("total"), nullableLong(rs, "venta_id"), List.of());
@@ -176,7 +152,7 @@ public class JdbcQuoteRepository implements QuoteRepository {
 
     private static void addScope(StringBuilder sql, List<Object> args, UserRole role, long userId) {
         if (role == UserRole.VENDEDOR) { sql.append(" AND q.vendedor_id = ?"); args.add(userId); }
-        if (role == UserRole.CLIENTE) { sql.append(" AND c.usuario_id = ?"); args.add(userId); }
+        else if (role != UserRole.ADMINISTRADOR && role != UserRole.SUPERVISOR_VENTAS) { sql.append(" AND 1 = 0"); }
     }
 
     private static String format(ResultSet rs, String column) throws SQLException {

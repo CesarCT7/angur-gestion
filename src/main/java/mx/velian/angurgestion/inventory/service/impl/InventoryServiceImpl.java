@@ -14,13 +14,16 @@ import mx.velian.angurgestion.inventory.model.InventoryMovement;
 import mx.velian.angurgestion.inventory.model.InventoryResult;
 import mx.velian.angurgestion.inventory.model.MovementType;
 import mx.velian.angurgestion.inventory.service.InventoryService;
+import mx.velian.angurgestion.audit.service.AuditTrail;
 
 @Service
 public class InventoryServiceImpl implements InventoryService {
     private final InventoryRepository inventory;
+    private final AuditTrail audit;
 
-    public InventoryServiceImpl(InventoryRepository inventory) {
+    public InventoryServiceImpl(InventoryRepository inventory, AuditTrail audit) {
         this.inventory = inventory;
+        this.audit=audit;
     }
 
     @Override
@@ -65,6 +68,7 @@ public class InventoryServiceImpl implements InventoryService {
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             return new InventoryResult(concurrent.resultingStock(), true);
         }
+        audit.record(userId,"INVENTARIO",Long.toString(productId),type.name(),type+" de "+quantity+" unidades de "+item.code()+". Existencia final "+resulting+". Motivo: "+form.getReason());
         return new InventoryResult(resulting, false);
     }
 }

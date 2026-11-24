@@ -13,20 +13,21 @@ import org.springframework.transaction.annotation.Transactional;
 import mx.velian.angurgestion.auth.model.UserRole;
 import mx.velian.angurgestion.quotation.dao.QuoteRepository;
 import mx.velian.angurgestion.quotation.dto.QuoteForm;
-import mx.velian.angurgestion.quotation.model.QuoteClientOption;
 import mx.velian.angurgestion.quotation.model.QuoteDetail;
 import mx.velian.angurgestion.quotation.model.QuoteLine;
 import mx.velian.angurgestion.quotation.model.QuoteProductOption;
 import mx.velian.angurgestion.quotation.model.QuoteStatus;
 import mx.velian.angurgestion.quotation.model.QuoteSummary;
 import mx.velian.angurgestion.quotation.service.QuoteService;
+import mx.velian.angurgestion.audit.service.AuditTrail;
 
 @Service
 public class QuoteServiceImpl implements QuoteService {
     private static final BigDecimal MAX_AMOUNT = new BigDecimal("99999999999.99");
     private final QuoteRepository quotes;
+    private final AuditTrail audit;
 
-    public QuoteServiceImpl(QuoteRepository quotes) { this.quotes = quotes; }
+    public QuoteServiceImpl(QuoteRepository quotes, AuditTrail audit) { this.quotes = quotes; this.audit=audit; }
 
     @Override
     public List<QuoteSummary> findAll(String search, String rawStatus, UserRole role, long userId) {
@@ -49,17 +50,11 @@ public class QuoteServiceImpl implements QuoteService {
     }
 
     @Override
-    public List<QuoteClientOption> findActiveClients() { return quotes.findActiveClients(); }
-
-    @Override
     public List<QuoteProductOption> findActiveProducts() { return quotes.findActiveProducts(); }
 
     @Override
     @Transactional
     public long create(QuoteForm form, long sellerId) {
-        if (form.getClientId() == null || !quotes.isActiveClient(form.getClientId())) {
-            throw new InvalidQuoteException("Selecciona un cliente activo.");
-        }
         if (form.getItems() == null || form.getItems().isEmpty()) {
             throw new InvalidQuoteException("Agrega al menos un producto a la cotización.");
         }
@@ -89,11 +84,12 @@ public class QuoteServiceImpl implements QuoteService {
         if (form.getObservations() != null && form.getObservations().length() > 1000) {
             throw new InvalidQuoteException("Las observaciones no pueden superar 1000 caracteres.");
         }
-        long quoteId = quotes.insertHeader(form.getClientId(), sellerId, form.getObservations(), total);
+        long quoteId = quotes.insertHeader(sellerId, form.getObservations(), total);
         for (QuoteLine line : lines) {
             quotes.insertLine(quoteId, line.productId(), line.code(), line.productName(), line.quantity(),
                     line.unitPrice(), line.subtotal());
         }
+        audit.record(sellerId,"COTIZACION",Long.toString(quoteId),"CREAR","Se creó la cotización #"+quoteId+" con "+lines.size()+" productos por un total de $"+total+".");
         return quoteId;
     }
 
@@ -106,12 +102,14 @@ public class QuoteServiceImpl implements QuoteService {
         if (next != QuoteStatus.ACEPTADA && next != QuoteStatus.RECHAZADA) {
             throw new IllegalArgumentException("Solo se puede aceptar o rechazar una cotización pendiente.");
         }
-        if (quotes.changePendingStatus(id, next, role, userId) == 0
+        int changed=quotes.changePendingStatus(id, next, role, userId);
+        if (changed == 0
                 && quotes.findById(id, role, userId).isEmpty()) {
             throw new QuoteNotFoundException(id);
         } else if (quotes.findById(id, role, userId).map(QuoteDetail::status).orElse(null) != next) {
             throw new IllegalStateException("La cotización ya no está pendiente y no se puede cambiar su estado.");
         }
+        if(changed>0)audit.record(userId,"COTIZACION",Long.toString(id),"CAMBIAR_ESTADO","La cotización #"+id+" cambió a "+next+".");
     }
 
     private static void ensureAmount(BigDecimal amount) {

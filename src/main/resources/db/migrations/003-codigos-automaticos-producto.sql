@@ -1,5 +1,5 @@
 -- Respaldar la base y ejecutar una sola vez para habilitar códigos automáticos permanentes.
-USE angur_gestion;
+USE angur_gestion_admin;
 
 CREATE TABLE codigos_producto (
     id          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,

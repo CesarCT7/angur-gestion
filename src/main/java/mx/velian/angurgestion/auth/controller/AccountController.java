@@ -42,38 +42,6 @@ public class AccountController {
         return false;
     }
 
-    private void prepare(Model model) {
-        model.addAttribute("pageTitle", "Crear cuenta");
-    }
-
-    @GetMapping("/registro")
-    public String registration(Model model) {
-        prepare(model);
-        model.addAttribute("form", new RegistrationForm());
-        return "auth/register";
-    }
-
-    @PostMapping("/registro")
-    public String register(
-            @Valid @ModelAttribute("form") RegistrationForm form,
-            BindingResult errors,
-            HttpServletRequest request,
-            Model model) {
-        prepare(model);
-        if (!Objects.equals(form.getPassword(), form.getPasswordConfirmation()))
-            errors.rejectValue("passwordConfirmation", "mismatch", "Las contraseñas no coinciden.");
-        if (!allow(request, "register", model) || errors.hasErrors()) return "auth/register";
-        try {
-            accounts.register(form);
-            return "redirect:/login?registered";
-        } catch (AuthOperationException error) {
-            model.addAttribute("formError", error.getMessage());
-        } catch (DataAccessException error) {
-            model.addAttribute("formError", UNAVAILABLE);
-        }
-        return "auth/register";
-    }
-
     private void emailPage(Model model) {
         model.addAttribute("pageTitle", "Recuperar acceso");
         model.addAttribute("formAction", "/recuperar-acceso");

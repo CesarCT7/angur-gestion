@@ -20,6 +20,7 @@ import mx.velian.angurgestion.auth.model.AngurUserDetails;
 import mx.velian.angurgestion.auth.model.UserRole;
 import mx.velian.angurgestion.quotation.service.QuoteService;
 import mx.velian.angurgestion.sale.dto.SaleForm;
+import mx.velian.angurgestion.sale.dto.SaleLineForm;
 import mx.velian.angurgestion.sale.service.SaleService;
 import mx.velian.angurgestion.sale.service.impl.InsufficientSaleStockException;
 import mx.velian.angurgestion.sale.service.impl.InvalidSaleException;
@@ -40,7 +41,7 @@ public class SaleController {
         model.addAttribute("sales", sales.findAll(q, estado, user.role(), user.id()));
         model.addAttribute("search", q);
         model.addAttribute("statusFilter", estado);
-        model.addAttribute("pageTitle", user.role() == UserRole.CLIENTE ? "Mis compras" : "Ventas");
+        model.addAttribute("pageTitle", "Ventas");
         model.addAttribute("activePage", "ventas");
         model.addAttribute("canCreateSale", canCreate(user.role()));
         return "sales/list";
@@ -111,8 +112,14 @@ public class SaleController {
     }
 
     private void prepare(Model model, SaleForm form, Authentication auth) {
-        model.addAttribute("form", form); model.addAttribute("clients", sales.findActiveClients());
-        model.addAttribute("products", sales.findActiveProducts()); model.addAttribute("pageTitle", "Nueva venta");
+        if (form.getQuoteId() == null) {
+            if (form.getItems().isEmpty()) {
+                form.getItems().add(new SaleLineForm());
+            }
+            model.addAttribute("products", sales.findActiveProducts());
+        }
+        model.addAttribute("form", form);
+        model.addAttribute("pageTitle", "Nueva venta");
         model.addAttribute("activePage", "ventas"); model.addAttribute("quoteMode", form.getQuoteId() != null);
         model.addAttribute("canCreateSale", canCreate(context(auth).role()));
     }

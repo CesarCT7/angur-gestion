@@ -1,16 +1,17 @@
-# Angur Gestión
+# Angur Gestión — variante solo administrador
 
-Sistema web para apoyar la operación de **Angur Display**: productos, existencias, clientes, cotizaciones, ventas y consultas de gestión. Este README es el punto de entrada para entender el proyecto, saber qué existe realmente en el código y continuar el desarrollo sin perder las peticiones ni confundirlas con requisitos de los documentos.
+Sistema web para apoyar la operación de **Angur Display**: productos, existencias, cotizaciones, ventas y consultas de gestión. Este README es el punto de entrada para entender el proyecto, saber qué existe realmente en el código y continuar el desarrollo sin perder las peticiones ni confundirlas con requisitos de los documentos.
 
-**Estado:** primera versión en desarrollo.
+**Estado de esta copia:** variante web administrativa en desarrollo; el proyecto original queda separado e intacto.
+**Base de datos:** `angur_gestion_admin` (independiente de la base original).
 **Repositorio local:** clona este repositorio en tu carpeta de trabajo.
-**Aplicación local:** [http://localhost:8080](http://localhost:8080)
+**Aplicación local:** [http://localhost:18081/login](http://localhost:18081/login)
 
 ---
 
 ## 1. Qué es y qué busca resolver
 
-Angur Gestión centralizará la información comercial y operativa de Angur Display. El alcance esperado incluye catálogo de productos, control de inventario, registro de clientes, cotizaciones, ventas, historial de movimientos y resúmenes financieros, con acceso según el rol de cada cuenta.
+Angur Gestión centralizará la información comercial y operativa de Angur Display. El alcance esperado incluye catálogo de productos, control de inventario, cotizaciones, ventas, historial de movimientos y resúmenes financieros, con acceso según el rol de cada cuenta.
 
 La aplicación está en construcción. Que un requisito aparezca en este documento **no significa que esté implementado**. Consulta las secciones **Hecho en el código** y **Pendiente**.
 
@@ -55,23 +56,25 @@ La base MySQL es la fuente de datos prevista. No se guardan credenciales de acce
 - Inicio de sesión con usuario o correo, sesión web y Spring Security.
 - Contraseñas almacenadas con BCrypt.
 - Alta inicial del administrador en /setup, protegida mediante bloqueo transaccional frente a solicitudes simultáneas.
-- Registro público exclusivo para clientes, con fila de cliente vinculada y verificación de correo antes del primer acceso.
-- Creación de cuentas de los cinco perfiles, incluidos administradores adicionales, y activación/desactivación desde `/usuarios`, solo para administradores autenticados.
+- Solo las cuentas ADMINISTRADOR pueden iniciar sesión en esta variante. El registro y el portal de cuentas CLIENTE están retirados; los nombres asociados a operaciones anteriores siguen disponibles en sus documentos.
+- El primer administrador de `/setup` queda designado automáticamente como principal. Las solicitudes siguientes requieren sesión administradora, se envían por correo al principal y no crean cuentas hasta su aprobación. La persona invitada define su contraseña en un enlace de un solo uso que vence en 48 horas.
+- El principal puede transferir la designación a otro administrador activo y verificado; no se puede desactivar al principal antes de transferirla.
 - Recuperación de acceso desde una sola opción del login: envía verificación si el correo aún no está verificado, o recuperación de contraseña si ya lo está. Los enlaces son aleatorios, de un solo uso y vencen en 24 horas (verificación) o 30 minutos (contraseña); solo se almacena su hash.
-- Sesiones de 20 minutos, revocación tras restablecer contraseña o desactivar una cuenta, CSRF y límite de solicitudes.
+- Sesiones de 20 minutos, revocación tras restablecer contraseña o desactivar una cuenta, CSRF y límite de solicitudes. El perfil Vercel guarda las sesiones en MySQL para compartirlas entre instancias.
 - Validación por bytes compatible con BCrypt y errores junto a cada campo.
 - Roles reconocidos por el modelo: ADMINISTRADOR, VENDEDOR, CLIENTE, SUPERVISOR_VENTAS y ENCARGADO_ALMACEN.
-- Panel inicial con resumen de productos, existencias, ventas e información reciente disponible. La pantalla del cliente sigue siendo provisional.
+- Panel inicial con resumen de productos, existencias, ventas e información reciente disponible. Esta variante no ofrece portal de cliente.
 - Catálogo de productos: consultar, buscar, crear y editar. Los productos sin historial ni existencia se eliminan físicamente; los que tienen historial o existencia se archivan y pueden restaurarse o eliminarse definitivamente sin perder partidas ni movimientos históricos.
 - Al crear un producto, el sistema asigna un código `ANG-00000001` secuencial e inmutable. Las reservas se conservan aunque se elimine definitivamente el producto.
 - Un producto nuevo crea su registro de existencia con cantidad cero. Las entradas y salidas se registran desde Inventario, no desde el catálogo.
-- Clientes: búsqueda por nombre, correo o teléfono; alta y edición con prevención de contactos activos duplicados, asociación opcional a una cuenta verificada, desactivación y reactivación con conservación de historial.
+- Las cotizaciones y ventas directas se emiten sin seleccionar cliente. Los documentos anteriores conservan su cliente histórico.
 - Inventario: consulta de existencias y hasta 100 movimientos recientes; administración y almacén registran entradas/salidas transaccionales con cantidad, motivo, usuario y saldo resultante. Ventas solo consulta disponibilidad.
+- Análisis y control (un solo apartado de navegación): reúne Historial/Auditoría y Reportes/Ganancias con pestañas internas. Historial consulta cotizaciones, ventas, movimientos y cambios administrativos con filtros y hasta 500 resultados; Reportes resume ventas registradas, ingresos, costos históricos y utilidad bruta, permite filtrar por periodo, producto y usuario, consultar cortes por mes/producto y descargar CSV. Las ventas canceladas se excluyen.
 - En el catálogo se ocultan costos a roles que no deben consultarlos; el acceso a creación y edición de productos está restringido a administración y almacén.
 - Interfaz adaptable inspirada en el Look & Feel recibido, con navegación y estados vacíos. Cotizaciones y Ventas ya tienen vistas, permisos por rol y consulta de detalle.
 - Cotizaciones: partidas y precios congelados, cálculo del servidor, estados PENDIENTE/ACEPTADA/RECHAZADA, búsqueda, detalle e impresión.
 - Ventas: registro directo o desde cotización aceptada, instantáneas de precio/costo, movimiento de salida de inventario, stock y venta dentro de una transacción e idempotencia.
-- Compilación y 20 pruebas aprobadas contra MySQL real, más un recorrido HTTP con SMTP local. Ver sección 9.
+- La copia original tenía verificaciones previas, pero la aprobación por correo aún requiere revisión funcional en MySQL y SMTP; esta variante se validó solo por compilación.
 
 ### Lo que este estado no confirma
 
@@ -83,12 +86,12 @@ La base MySQL es la fuente de datos prevista. No se guardan credenciales de acce
 
 Esta hoja de ruta resume funciones que aparecen en el alcance y todavía deben implementarse. Es una guía de producto, no una lista de instrucciones imperativas incrustadas en documentos.
 
-1. **Preparar MySQL para cada instalación:** el entorno de desarrollo ya está comprobado; cada instalación necesita su esquema o migración y sus credenciales fuera de Git.
+1. **Preparar MySQL para cada instalación:** esta copia local usa una base separada ya creada; cada instalación distinta necesita su esquema o migraciones y credenciales fuera de Git.
 2. **Cotizaciones:** implementado el flujo web inicial. Pendiente acordar transiciones adicionales de estado, cancelación y reglas de expiración.
 3. **Ventas:** implementado el registro inicial, incluido el descuento atómico de stock y la idempotencia. Pendiente acordar el proceso de cancelación y sus movimientos compensatorios.
-4. **Historial y auditoría:** ampliar las consultas por fecha, usuario, cliente, producto y operación según los requisitos.
-5. **Historial y permisos restantes:** los permisos por rol/titularidad de Cotizaciones y Ventas están implementados; ampliar búsqueda avanzada y auditoría por fecha, usuario, cliente, producto y operación.
-6. **Reportes:** consultas y resúmenes de ventas, costos y ganancias históricas con los filtros que definan los requerimientos.
+4. **Análisis y control:** Historial/Auditoría implementados para cotizaciones, ventas, inventario, productos, clientes y cuentas, dentro del mismo apartado de navegación que Reportes.
+5. **Búsqueda avanzada:** implementada en Historial con periodo, tipo/estado, producto, usuario y texto libre. Cotizaciones y Ventas permiten buscar por folio, código o nombre de producto y filtrar por estado. El cliente histórico se muestra como referencia en los documentos.
+6. **Reportes:** resumen inicial implementado por periodo, producto y usuario, con cortes mensual y por producto y exportación CSV, usando costos históricos; disponible como pestaña de Análisis y control.
 7. **Cliente y Android/distribuidos:** revisar el alcance de esos documentos y definir integraciones o API antes de asumir que forman parte de esta aplicación web.
 8. **Pruebas y entrega:** convertir el plan de pruebas en pruebas funcionales y técnicas, completar accesibilidad/validaciones y documentar el despliegue.
 
@@ -107,7 +110,7 @@ El detalle de las observaciones del esquema está en src/main/resources/db/READM
 
 - Los requerimientos nombran PENDIENTE como estado inicial de cotización, mientras que un diagrama también propone BORRADOR y EMITIDA. El esquema admite esos valores; falta acordar las transiciones.
 - Se contempla CANCELADA para ventas, pero falta acordar el proceso y si cancelar crea un movimiento compensatorio. No implementar cancelación hasta resolverlo.
-- Correo y teléfono de cliente se dejaron opcionales en el esquema inicial; confirmar obligatoriedad con el usuario/product owner.
+- La tabla de clientes se conserva para consultar documentos históricos.
 - Los importes usan dos decimales; falta confirmar si se debe fijar una moneda explícita.
 
 ## 6. Preparar y ejecutar localmente
@@ -117,7 +120,7 @@ El detalle de las observaciones del esquema está en src/main/resources/db/READM
 - Windows: extrae TODO el ZIP y abre `iniciar-angur.cmd` con doble clic.
 - Linux: ejecuta `./iniciar-angur.sh` desde una terminal.
 
-El paquete listo contiene `scripts/iniciador.jar` y la aplicación compilada en `target/`: necesita Java 21 y MySQL, sin Maven ni Docker si usas tu base existente. El ZIP de **fuentes** compila al arrancar y necesita un JDK 21 completo. No ejecutes solamente el .cmd separado del resto del proyecto ni desde la carpeta comprimida.
+Esta copia está preparada como proyecto fuente y necesita un JDK 21 completo; el lanzador usa `scripts/IniciarAngur.java` y no depende del JAR auxiliar heredado. No ejecutes solamente el .cmd separado del resto del proyecto ni desde la carpeta comprimida.
 
 El arrancador carga `.env` sin ejecutar su contenido, comprueba las credenciales y el esquema de MySQL, y abre http://localhost:18080/login cuando el servidor responde. En Windows, cualquier error permanece en pantalla y en `.tmp/arranque.log`; se respeta `JAVA_HOME` si Java no está en PATH. Deja la ventana abierta: Ctrl+C detiene la aplicación y conserva los datos.
 
@@ -150,20 +153,18 @@ Las variables de la terminal tienen prioridad sobre `.env`; se admiten valores e
 ### Crear/preparar la base
 
 1. Abre src/main/resources/db/schema.sql en MySQL Workbench.
-2. Conéctate al MySQL local y ejecuta el script. Crea y selecciona angur_gestion.
-3. Comprueba que existan las tablas: usuarios, clientes, productos, codigos_producto, existencias, cotizaciones, cotizacion_partidas, ventas, venta_partidas y movimientos_inventario.
-4. El esquema no inserta cuentas ni datos de demostración. También crea `auth_setup` y `auth_tokens`.
+2. Conéctate al MySQL local y ejecuta el script. Crea y selecciona angur_gestion_admin.
+3. Comprueba que existan las tablas: usuarios, clientes, productos, codigos_producto, existencias, cotizaciones, cotizacion_partidas, ventas, venta_partidas, movimientos_inventario, `auth_setup`, `auth_tokens` y `solicitudes_admin`.
+4. El esquema no inserta cuentas ni datos de demostración. El primer administrador se crea en `/setup` y queda como administrador principal.
 
-Para una base existente, respáldala y ejecuta una vez cada migración pendiente en orden: `src/main/resources/db/migrations/001-autenticacion-web.sql`, `src/main/resources/db/migrations/002-eliminacion-productos.sql` y `src/main/resources/db/migrations/003-codigos-automaticos-producto.sql`. Revisa [AUTHENTICATION.md](src/main/resources/db/AUTHENTICATION.md) y [las notas del esquema](src/main/resources/db/README.md).
-
-La base local `angur_gestion` de este paquete ya tiene aplicadas las migraciones `001`, `002` y `003`; no las ejecutes otra vez ahí. Se creó un respaldo antes de aplicar `003`.
+Para actualizar desde la versión con el apartado Clientes, respalda la base administrativa y aplica `007-cotizaciones-sin-cliente.sql`. La migración permite dejar vacío el cliente de la cotización y conserva las relaciones existentes. La migración de sesiones `006` corresponde al perfil de Vercel.
 
 ### Configurar credenciales en PowerShell
 
 En la misma terminal desde la que ejecutarás la aplicación:
 
 ~~~powershell
-$env:DB_URL = 'jdbc:mysql://localhost:3306/angur_gestion?useUnicode=true&characterEncoding=UTF-8&serverTimezone=America/Mexico_City'
+$env:DB_URL = 'jdbc:mysql://localhost:3306/angur_gestion_admin?useUnicode=true&characterEncoding=UTF-8&serverTimezone=America/Mexico_City'
 $env:DB_USER = 'root'
 $env:DB_PASSWORD = 'tu-clave-local'
 ~~~
@@ -184,12 +185,13 @@ Después abre:
 - http://localhost:8080/setup — crear la primera cuenta administradora, una sola vez y con la base disponible.
 - http://localhost:8080/ — panel; requiere iniciar sesión.
 - http://localhost:8080/productos — catálogo; requiere el rol autorizado.
-- http://localhost:8080/clientes — gestión de clientes; administrador y vendedor.
-- http://localhost:8080/inventario — existencias; administrador, vendedor y encargado de almacén.
-- http://localhost:8080/registro — registro de clientes.
+- http://localhost:8080/cotizaciones — emitir una cotización, consultar el historial por folio e imprimir el detalle.
+- http://localhost:8080/inventario — existencias; acceso solo administrador en esta copia.
+- No existe ruta de registro público para clientes en esta variante.
 - http://localhost:8080/recuperar-acceso — verificación o recuperación de contraseña según el estado de la cuenta.
 - http://localhost:8080/usuarios — administración de cuentas; solo administrador.
-- http://localhost:8080/usuarios/nuevo — crear cuentas, incluidos administradores adicionales; requiere una sesión de administrador.
+- http://localhost:8080/usuarios/nuevo — solicitar un administrador adicional con aprobación del principal; requiere una sesión de administrador.
+- http://localhost:8080/analisis — apartado Análisis y control, abre Historial/Auditoría; desde sus pestañas se accede a Reportes/Ganancias.
 
 Estos ejemplos corresponden al arranque Maven manual. Los archivos `iniciar-angur` usan el puerto 18080 por defecto.
 
@@ -199,13 +201,15 @@ Para detener el servidor, usa Ctrl+C en la terminal donde ejecutaste Maven. Si M
 
 ~~~text
 src/main/java/mx/velian/angurgestion/
+├── audit/         # bitácora persistente de cambios
 ├── auth/          # acceso, recuperación, cuentas y roles
-├── client/        # clientes y asociación opcional con cuenta
 ├── config/        # configuración de Spring Security
 ├── dashboard/     # resumen principal
+├── history/       # sección de historial dentro de Análisis y control
 ├── inventory/     # existencias y movimientos transaccionales
 ├── product/       # catálogo y persistencia JDBC de productos
 ├── quotation/     # cotizaciones y precios congelados
+├── report/        # sección de reportes dentro de Análisis y control
 ├── sale/          # ventas transaccionales y movimientos de inventario
 └── shared/        # componentes compartidos de MVC
 
@@ -232,13 +236,29 @@ Esta sección define el proceso para futuras peticiones de código:
 
 ### Solicitudes directas del usuario pendientes
 
-No hay solicitudes directas pendientes. En esta sesión se unificó la recuperación de acceso y se aclaró cómo crear administradores adicionales; también quedaron implementados los módulos web iniciales de Cotizaciones y Ventas.
+- Despliegue en Vercel pausado a petición del usuario. El proyecto está vinculado y la instancia TiDB Starter está activa con límite mensual de $0. Al retomar, renovar la contraseña de TiDB, aplicar el esquema, configurar las credenciales de la aplicación, publicar y comprobar el acceso. El correo de recuperación y aprobación también requiere SMTP.
 
 ### Siguiente paso recomendado
 
-Siguiente paso: historial/auditoría y reportes. Android continúa en una etapa posterior. Las tablas usadas por Cotizaciones y Ventas ya están en el esquema; estos módulos no requirieron migración.
+Siguiente paso: acordar transiciones pendientes de cotizaciones y cancelación de ventas; no implementar esas reglas hasta resolverlas. Android y servicios distribuidos continúan en una etapa posterior.
 
-## 9. Verificación de la restauración
+## 9. Verificación de esta variante
+
+- En MySQL aislado se comprobó que Cotizaciones y Ventas encuentran folios y códigos de producto, que Historial conserva la búsqueda por producto y que los nombres históricos ya no sirven de filtro. Reportes y su CSV ignoran el antiguo parámetro de cliente.
+
+- El 23 de noviembre de 2026 se aplicó la migración 007 en la base administrativa local tras respaldarla. Se comprobó que la columna admite NULL, conserva la clave foránea y que los datos coincidían antes y después.
+- En una instancia MySQL aislada, una sesión administradora emitió, consultó, imprimió y convirtió en venta una cotización sin cliente. Se comprobó también que una cotización anterior conservó su cliente y sus precios tras la migración, que ambos folios aparecieron en el historial y que ventas, inventario, reportes y CSV reflejaron las operaciones. La ruta /clientes devolvió 404 después de iniciar sesión.
+
+- La base local separada `angur_gestion_admin` tiene el esquema de negocio, solicitudes administrativas y bitácora `auditoria_eventos`; el usuario `angur_admin` tiene permisos limitados a esa base. No se modificó la base original.
+- El lanzador comprobó la conexión y el esquema actualizado. La aplicación quedó iniciada en `localhost:18081`.
+- `mvnw -DskipTests package` compiló y empaquetó la versión de estos módulos. No se ejecutaron pruebas funcionales. SMTP local no está activo, así que los correos siguen sin verificación funcional.
+- La migración `005-auditoria-eventos.sql` está aplicada a la base local de esta copia. La auditoría registra las operaciones descritas arriba; no se probó cada flujo con una sesión administradora.
+- Historial y Reportes aparecen bajo una sola entrada de menú Análisis y control y comparten pestañas de navegación. `mvnw -DskipTests package` terminó con BUILD SUCCESS; los flujos autenticados de las dos vistas no se verificaron en esta sesión.
+- El desglose mensual de Reportes agrupa por la misma expresión `DATE_FORMAT` que muestra, compatible con `ONLY_FULL_GROUP_BY`. Los errores de consulta ahora se registran en el log del servidor y el mensaje de pantalla ya no atribuye automáticamente cualquier fallo a la conexión. El lanzador comprobó MySQL y el esquema; no se inició sesión administradora para recorrer el reporte.
+
+### Verificaciones heredadas del proyecto base
+
+Los apuntes siguientes describen la copia original, no el flujo nuevo de aprobación ni el acceso exclusivo de administradores.
 
 - Se descargó de nuevo el ZIP de `master`, revisión `c963fabbd92967abb3e401feb040b9d1d654589f`, y se reconstruyó el trabajo previo en una rama separada.
 - **20 pruebas aprobadas**, sin fallos ni omisiones: arranque y 19 comprobaciones de autenticación, incluidos los cinco perfiles.
@@ -258,11 +278,11 @@ Con un JDK 21 completo y Docker, ejecuta `./mvnw test`. La suite usa una MySQL a
 
 En este entorno se utilizó un proxy temporal para Maven y `-Dmaven.compiler.release= -Dmaven.compiler.source=21 -Dmaven.compiler.target=21`, porque el JDK reducido carece de `ct.sym`. Las pruebas se ejecutaron en una base `_test` aislada de MySQL 8.4. Estas adaptaciones no cambian el POM.
 
-## 10. Cuentas y correo
+## 10. Cuentas y correo en esta variante
 
-- Solo CLIENTE puede registrarse públicamente. Un campo manipulado no permite elegir perfiles internos ni elevar privilegios.
-- Un administrador autenticado puede crear cuentas de los cinco perfiles, incluidos otros administradores, desde `/usuarios/nuevo`. Toda cuenta nueva requiere verificar el correo.
-- El primer administrador se habilita mediante `/setup` durante la instalación, sin depender de SMTP. La excepción no aplica a registros posteriores.
+- No hay registro público de CLIENTE. Security exige ADMINISTRADOR en todas las rutas protegidas y el servicio de autenticación rechaza roles distintos, incluso si existen en la base.
+- Un administrador autenticado envía una solicitud desde `/usuarios/nuevo`. El correo de aprobación va al administrador principal configurado en `auth_setup` y vence en 24 horas. Al aprobar, se envía una invitación de 48 horas al correo solicitado.
+- `/setup` crea al primer administrador como principal sin depender de SMTP. La migración 004 designa como principal al administrador activo y verificado de menor ID en una base preexistente. La cuenta adicional se crea cuando la persona abre la invitación y define su contraseña.
 - `/recuperar-acceso` elige el flujo según el estado de la cuenta: verificación (24 horas) para cuentas aún no verificadas o cambio de contraseña (30 minutos) para cuentas verificadas. Una sola opción reemplaza los enlaces separados del login. Solicitar uno nuevo invalida el anterior. Abrirlo no cambia datos; hay que confirmar el formulario.
 - La recuperación usa el mismo mensaje para cuentas existentes y desconocidas. Los logs no contienen contraseñas ni enlaces.
 - El límite de solicitudes es por instancia y se reinicia al reiniciar el proceso. Varias réplicas requieren un límite compartido en su proxy o servicio de acceso.
@@ -277,6 +297,9 @@ El arranque Maven manual no lee `.env`. En Bash puedes cargarlo con `set -a`, `.
 
 ### Correo real y producción
 
-Configura fuera de Git `AUTH_MAIL_ENABLED=true`, `AUTH_MAIL_FROM`, `AUTH_BASE_URL`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_AUTH` y `SMTP_STARTTLS` o `SMTP_SSL` según el proveedor. Los valores de ejemplo son para Mailpit. Un fallo SMTP revierte el alta/emisión y permite repetir la operación.
+Configura fuera de Git `AUTH_MAIL_ENABLED=true`, `AUTH_MAIL_FROM`, `AUTH_BASE_URL`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_AUTH` y `SMTP_STARTTLS` o `SMTP_SSL` según el proveedor. Los valores de ejemplo son para Mailpit. Un fallo SMTP revierte la solicitud o aprobación y permite repetir la operación.
 
 Para acceso público, usa HTTPS en `AUTH_BASE_URL`, TLS en el servidor/proxy y `SESSION_COOKIE_SECURE=true`. Los enlaces nunca se construyen a partir del encabezado Host. Consulta [las notas de autenticación](src/main/resources/db/AUTHENTICATION.md).
+
+
+

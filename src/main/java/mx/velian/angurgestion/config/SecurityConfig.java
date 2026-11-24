@@ -39,44 +39,21 @@ public class SecurityConfig {
                                                 "/favicon.ico",
                                                 "/login",
                                                 "/setup",
-                                                "/registro",
                                                 "/recuperar-acceso",
                                                 "/verificar-correo",
                                                 "/reenviar-verificacion",
                                                 "/recuperar-clave",
                                                 "/restablecer-clave",
+                                                "/aprobar-administrador",
+                                                "/aprobar-administrador/**",
+                                                "/completar-admin",
                                                 "/acceso-denegado",
                                                 "/error")
                                         .permitAll()
                                         .requestMatchers("/usuarios/**")
                                         .hasRole("ADMINISTRADOR")
-                                        .requestMatchers(HttpMethod.POST, "/cotizaciones/**", "/ventas/**")
-                                        .hasAnyRole("ADMINISTRADOR", "VENDEDOR")
-                                        .requestMatchers(HttpMethod.GET, "/cotizaciones/nueva", "/ventas/nueva", "/ventas/nueva/cotizacion/**")
-                                        .hasAnyRole("ADMINISTRADOR", "VENDEDOR")
-                                        .requestMatchers("/cotizaciones/**", "/ventas/**")
-                                        .hasAnyRole("ADMINISTRADOR", "VENDEDOR", "SUPERVISOR_VENTAS", "CLIENTE")                        .requestMatchers("/clientes/**")
-                                        .hasAnyRole("ADMINISTRADOR", "VENDEDOR")
-                                        .requestMatchers(HttpMethod.GET, "/inventario/movimiento")
-                                        .hasAnyRole("ADMINISTRADOR", "ENCARGADO_ALMACEN")
-                                        .requestMatchers(HttpMethod.POST, "/inventario/**")
-                                        .hasAnyRole("ADMINISTRADOR", "ENCARGADO_ALMACEN")
-                                        .requestMatchers("/inventario/**")
-                                        .hasAnyRole("ADMINISTRADOR", "VENDEDOR", "ENCARGADO_ALMACEN")
-                                        .requestMatchers(
-                                                HttpMethod.GET,
-                                                "/productos/nuevo",
-                                                "/productos/archivados",
-                                                "/productos/*/editar")
-                                        .hasAnyRole("ADMINISTRADOR", "ENCARGADO_ALMACEN")
-                                        .requestMatchers(HttpMethod.POST, "/productos/**")
-                                        .hasAnyRole("ADMINISTRADOR", "ENCARGADO_ALMACEN")
-                                        .requestMatchers("/productos/**")
-                                        .hasAnyRole(
-                                                "ADMINISTRADOR",
-                                                "VENDEDOR",
-                                                "SUPERVISOR_VENTAS",
-                                                "ENCARGADO_ALMACEN")
+                                        .requestMatchers("/**")
+                                        .hasRole("ADMINISTRADOR")
                                         .anyRequest()
                                         .authenticated())
                 .formLogin(

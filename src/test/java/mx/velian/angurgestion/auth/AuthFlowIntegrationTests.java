@@ -468,8 +468,6 @@ class AuthFlowIntegrationTests {
                         encoder.encode(PASSWORD),
                         role,
                         true);
-        if (role == UserRole.CLIENTE)
-            users.createClient(id, "PARTICULAR", "Perfil de prueba", "perfil@example.test", id);
         var session = login("perfil", PASSWORD);
         mvc.perform(get("/").session(session)).andExpect(status().isOk());
         mvc.perform(get("/productos").session(session))

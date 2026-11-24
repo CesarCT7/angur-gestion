@@ -57,6 +57,21 @@ public class JdbcUserRepository implements UserRepository {
         return one(SELECT + "WHERE id=? FOR UPDATE", id);
     }
 
+    public Optional<UserAccount> findPrincipalAdministrator() {
+        return one(SELECT + "WHERE id=(SELECT administrador_principal_id FROM auth_setup WHERE id=1) AND activo=TRUE AND correo_verificado=TRUE AND rol='ADMINISTRADOR'");
+    }
+
+    public boolean isPrincipalAdministrator(long id) {
+        Integer count = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM auth_setup WHERE id=1 AND administrador_principal_id=?",
+                Integer.class, id);
+        return count != null && count > 0;
+    }
+
+    public void setPrincipalAdministrator(long id) {
+        jdbc.update("UPDATE auth_setup SET administrador_principal_id=? WHERE id=1", id);
+    }
+
     public List<UserAccount> findAll() {
         return jdbc.query(SELECT + "ORDER BY nombre,id", MAPPER);
     }
@@ -107,17 +122,6 @@ public class JdbcUserRepository implements UserRepository {
         return Objects.requireNonNull(keys.getKey()).longValue();
     }
 
-    public void createClient(long id, String type, String name, String email, long author) {
-        jdbc.update(
-                "INSERT INTO clientes (usuario_id,creado_por,tipo,nombre_razon_social,correo)"
-                    + " VALUES (?,?,?,?,?)",
-                id,
-                author,
-                type,
-                name.trim(),
-                email.trim().toLowerCase(Locale.ROOT));
-    }
-
     public void verifyEmail(long id) {
         jdbc.update(
                 "UPDATE usuarios SET correo_verificado=TRUE,version_sesion=version_sesion+1 WHERE"
@@ -143,7 +147,7 @@ public class JdbcUserRepository implements UserRepository {
         jdbc.queryForObject("SELECT id FROM auth_setup WHERE id=1 FOR UPDATE", Integer.class);
     }
 
-    public void completeSetup() {
-        jdbc.update("UPDATE auth_setup SET completado=TRUE WHERE id=1");
+    public void completeSetup(long administratorId) {
+        jdbc.update("UPDATE auth_setup SET completado=TRUE, administrador_principal_id=? WHERE id=1", administratorId);
     }
 }

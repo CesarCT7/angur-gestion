@@ -9,13 +9,16 @@ import mx.velian.angurgestion.product.dao.ProductRepository;
 import mx.velian.angurgestion.product.dto.ProductForm;
 import mx.velian.angurgestion.product.model.Product;
 import mx.velian.angurgestion.product.service.ProductService;
+import mx.velian.angurgestion.audit.service.AuditTrail;
 
 @Service
 public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
+    private final AuditTrail audit;
 
-    public ProductServiceImpl(ProductRepository productRepository) {
+    public ProductServiceImpl(ProductRepository productRepository, AuditTrail audit) {
         this.productRepository = productRepository;
+        this.audit = audit;
     }
 
     @Override
@@ -58,7 +61,9 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional
     public String create(ProductForm form) {
-        return productRepository.insert(form);
+        String code=productRepository.insert(form);
+        audit.recordCurrent("PRODUCTO",code,"CREAR","Se creó el producto "+form.getName()+" con código "+code+".");
+        return code;
     }
 
     @Override
@@ -72,26 +77,31 @@ public class ProductServiceImpl implements ProductService {
         if (productRepository.update(id, form) == 0) {
             throw new ProductNotFoundException(id);
         }
+        audit.recordCurrent("PRODUCTO",Long.toString(id),"EDITAR","Se actualizaron los datos del producto "+form.getCode()+".");
     }
 
     @Override
     @Transactional
     public boolean deleteOrArchive(long id) {
-        productRepository.findById(id).orElseThrow(() -> new ProductNotFoundException(id));
+        Product product=productRepository.findById(id).orElseThrow(() -> new ProductNotFoundException(id));
         if (productRepository.hasHistory(id)) {
             productRepository.archive(id);
+            audit.recordCurrent("PRODUCTO",Long.toString(id),"ARCHIVAR","Se archivó el producto "+product.code()+" · "+product.name()+".");
             return true;
         }
         productRepository.deletePermanently(id);
+        audit.recordCurrent("PRODUCTO",Long.toString(id),"ELIMINAR","Se eliminó definitivamente el producto "+product.code()+" · "+product.name()+".");
         return false;
     }
 
     @Override
     @Transactional
     public void restore(long id) {
+        Product product=productRepository.findById(id).orElseThrow(() -> new ProductNotFoundException(id));
         if (productRepository.restore(id) == 0 && productRepository.findById(id).isEmpty()) {
             throw new ProductNotFoundException(id);
         }
+        if(!product.active())audit.recordCurrent("PRODUCTO",Long.toString(id),"RESTAURAR","Se restauró el producto "+product.code()+" · "+product.name()+".");
     }
 
     @Override
@@ -103,5 +113,6 @@ public class ProductServiceImpl implements ProductService {
             throw new IllegalStateException("Solo se puede eliminar definitivamente un producto archivado.");
         }
         productRepository.deletePermanently(id);
+        audit.recordCurrent("PRODUCTO",Long.toString(id),"ELIMINAR","Se eliminó definitivamente el producto archivado "+product.code()+" · "+product.name()+".");
     }
 }

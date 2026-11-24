@@ -5,7 +5,6 @@ import java.util.Optional;
 
 import mx.velian.angurgestion.auth.model.UserRole;
 import mx.velian.angurgestion.quotation.dto.QuoteForm;
-import mx.velian.angurgestion.quotation.model.QuoteClientOption;
 import mx.velian.angurgestion.quotation.model.QuoteDetail;
 import mx.velian.angurgestion.quotation.model.QuoteProductOption;
 import mx.velian.angurgestion.quotation.model.QuoteStatus;
@@ -15,7 +14,6 @@ public interface QuoteService {
     List<QuoteSummary> findAll(String search, String status, UserRole role, long userId);
     Optional<QuoteDetail> findById(long id, UserRole role, long userId);
     Optional<QuoteDetail> findAcceptedForSale(long id, UserRole role, long userId);
-    List<QuoteClientOption> findActiveClients();
     List<QuoteProductOption> findActiveProducts();
     long create(QuoteForm form, long sellerId);
     void updateStatus(long id, QuoteStatus next, UserRole role, long userId);

@@ -1,5 +1,5 @@
 -- Respaldar y ejecutar UNA vez sobre la versión anterior.
-USE angur_gestion;
+USE angur_gestion_admin;
 ALTER TABLE usuarios ADD COLUMN correo_verificado BOOLEAN NOT NULL DEFAULT FALSE,
     ADD COLUMN version_sesion BIGINT NOT NULL DEFAULT 0;
 UPDATE usuarios SET correo_verificado = TRUE WHERE rol = 'ADMINISTRADOR';

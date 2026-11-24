@@ -39,7 +39,7 @@ public class QuoteController {
         model.addAttribute("statusFilter", estado);
         model.addAttribute("canCreateQuote", canCreate(user.role()));
         model.addAttribute("canChangeStatus", canCreate(user.role()));
-        model.addAttribute("pageTitle", user.role() == UserRole.CLIENTE ? "Mis cotizaciones" : "Cotizaciones");
+        model.addAttribute("pageTitle", "Cotizaciones");
         model.addAttribute("activePage", "cotizaciones");
         return "quotations/list";
     }
@@ -124,7 +124,6 @@ public class QuoteController {
 
     private void prepareForm(Model model, QuoteForm form, Authentication authentication) {
         model.addAttribute("form", form);
-        model.addAttribute("clients", quotes.findActiveClients());
         model.addAttribute("products", quotes.findActiveProducts());
         model.addAttribute("pageTitle", "Nueva cotización");
         model.addAttribute("formTitle", "Nueva cotización");

@@ -13,6 +13,12 @@ public interface UserRepository {
 
     Optional<UserAccount> lockById(long id);
 
+    Optional<UserAccount> findPrincipalAdministrator();
+
+    boolean isPrincipalAdministrator(long id);
+
+    void setPrincipalAdministrator(long id);
+
     List<UserAccount> findAll();
 
     long countUsers();
@@ -27,8 +33,6 @@ public interface UserRepository {
             UserRole role,
             boolean verified);
 
-    void createClient(long id, String type, String name, String email, long createdBy);
-
     void verifyEmail(long id);
 
     void changePassword(long id, String hash);
@@ -37,5 +41,5 @@ public interface UserRepository {
 
     void lockSetup();
 
-    void completeSetup();
+    void completeSetup(long administratorId);
 }

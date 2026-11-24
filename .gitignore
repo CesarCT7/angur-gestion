@@ -32,6 +32,7 @@ build/
 
 ### VS Code ###
 .vscode/
+.vercel/
 
 ### Local secrets and logs ###
 .env
@@ -42,3 +43,5 @@ application-local.properties
 
 # Compiled launcher only included in local distribution archives
 /scripts/iniciador.jar
+
+.vercel

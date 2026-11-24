@@ -1133,6 +1133,12 @@ select:focus-visible {
     }
 }
 
+/* Análisis y control: pestañas compartidas por las dos secciones. */
+.analysis-tabs { gap: 8px; margin: 0 0 22px; padding: 6px; border: 1px solid #dce2df; border-radius: 12px; background: #fff; }
+.analysis-tabs .nav-link { border-radius: 8px; color: var(--angur-ink); font-weight: 650; }
+.analysis-tabs .nav-link.active { background: var(--angur-ink); color: #fff; }
+.analysis-tabs .nav-link:focus-visible { outline: 3px solid #d9a36f; outline-offset: 2px; }
+
 /* Acceso: controles consistentes sin depender de recursos externos. */
 .auth-narrow { max-width: 620px; }
 .auth-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 20px; margin-top: 24px; font-size: .84rem; }

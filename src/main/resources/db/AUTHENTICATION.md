@@ -1,14 +1,16 @@
-# Autenticación web
+# Autenticación web: variante solo administrador
 
-Una instalación nueva ejecuta `schema.sql`: incluye las diez tablas comerciales más `auth_setup` y `auth_tokens`, sin cuentas iniciales. Para una instalación de la versión anterior, respalda la base y ejecuta **una sola vez** `migrations/001-autenticacion-web.sql`. No vuelvas a crear todas sus tablas. La migración conserva los usuarios y habilita al administrador previo; los demás perfiles deben verificar su correo.
+Una instalación nueva ejecuta `schema.sql`. Incluye las tablas comerciales, `auth_setup`, `auth_tokens` y `solicitudes_admin`, sin cuentas iniciales. `/setup` crea el primer administrador y lo marca como principal.
 
-- `auth_setup` contiene una fila bloqueada mediante `FOR UPDATE`. El alta inicial permanece excluida hasta el commit, incluso con solicitudes simultáneas.
-- Los enlaces contienen 256 bits aleatorios. Solo se almacena su SHA-256, propósito, vencimiento y fecha de uso.
-- Verificar correo vence en 24 horas; restablecer contraseña, en 30 minutos. Reenviar invalida enlaces anteriores del mismo propósito. Abrir el enlace no cambia datos: hace falta POST con CSRF.
-- El consumo del enlace, el cambio de contraseña y el incremento de `version_sesion` se confirman en una transacción bajo bloqueo de la cuenta. El siguiente acceso de una sesión anterior la invalida.
-- El registro público crea exclusivamente `CLIENTE` y su fila de `clientes` vinculada, con el propio usuario como autor. El alta administrativa conserva al administrador como autor.
-- La administración crea cuentas de los cinco perfiles y activa/desactiva accesos. No puede desactivarse a sí misma ni dejar el sistema sin administrador activo y verificado.
+Para una base existente, haz un respaldo y aplica una sola vez las migraciones aplicables que describe el [README de base de datos](README.md) sobre la base exclusiva `angur_gestion_admin`. La migración `004-solicitudes-admin.sql` conserva los datos, designa al administrador activo y verificado más antiguo como principal, crea las solicitudes y deshabilita las cuentas no administradoras. La `005-auditoria-eventos.sql` habilita la bitácora de actividad usada por Historial/Auditoría. La `006-sesiones-persistentes.sql` guarda sesiones en MySQL para que sigan disponibles entre distintas instancias de la aplicación. No apliques estas migraciones a la base de la versión original.
 
-SMTP se utiliza dentro de la transacción de emisión. Si el envío falla, se revierte el alta/emisión. Si el envío llegó pero el commit falló, el enlace no funcionará y deberá solicitarse otro. No se registran contraseñas ni enlaces en logs.
+- Spring Security solo autentica el rol `ADMINISTRADOR`. El registro y el portal de cuentas CLIENTE no están disponibles en esta variante; los documentos anteriores conservan la referencia a sus clientes históricos.
+- `auth_setup` contiene una fila bloqueada mediante `FOR UPDATE`; el alta inicial permanece excluida hasta el commit, incluso con solicitudes simultáneas.
+- Un administrador autenticado solicita una cuenta desde `/usuarios/nuevo`. El enlace de aprobación aleatorio se envía al correo del principal, vence en 24 horas y se guarda únicamente como SHA-256.
+- Aprobar genera una invitación aleatoria al correo solicitado. Vence en 48 horas; al usarla, la persona define su contraseña y se crea una cuenta ADMINISTRADOR verificada. Rechazar invalida el flujo.
+- El primer administrador es principal. El principal puede transferir la designación a otro administrador activo y verificado; el puesto debe transferirse antes de desactivar la cuenta actual.
+- Recuperar acceso vence en 24 horas para verificación y 30 minutos para restablecer contraseña. Los enlaces se consumen con POST y CSRF; cambiar contraseña revoca sesiones anteriores.
 
-Para producción, configura HTTPS en el servidor/proxy, `AUTH_BASE_URL` con HTTPS y `SESSION_COOKIE_SECURE=true`. Los enlaces se construyen desde esa URL explícita, nunca desde Host. El límite de intentos vive en memoria por instancia; varias réplicas necesitan un límite compartido en el proxy o servicio de acceso. Estos ajustes de producción no se han verificado en este entorno.
+Las solicitudes y aprobaciones envían correo dentro de la transacción. Si falla SMTP, el cambio de estado se revierte. No se registran contraseñas ni enlaces en logs.
+
+Para producción, configura HTTPS en servidor/proxy, `AUTH_BASE_URL` con HTTPS y `SESSION_COOKIE_SECURE=true`. Los enlaces usan esa URL explícita, nunca el encabezado Host. El límite de intentos vive en memoria por instancia; varias réplicas requieren un límite compartido. Estos ajustes no se verificaron en esta variante.

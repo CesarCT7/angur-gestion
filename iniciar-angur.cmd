@@ -20,11 +20,7 @@ if errorlevel 1 (
 echo Iniciando Angur Gestion. Deja esta ventana abierta.
 echo Se comprobara MySQL antes de abrir http://localhost:18080/login
 echo El detalle queda en .tmp\arranque.log
-if exist "scripts\iniciador.jar" (
-    "%ANGUR_JAVA%" -jar "scripts\iniciador.jar" --jar %* >> ".tmp\arranque.log" 2>&1
-) else (
-    "%ANGUR_JAVA%" "scripts\IniciarAngur.java" %* >> ".tmp\arranque.log" 2>&1
-)
+"%ANGUR_JAVA%" "scripts\IniciarAngur.java" %* >> ".tmp\arranque.log" 2>&1
 set "ANGUR_RESULT=%ERRORLEVEL%"
 if not "%ANGUR_RESULT%"=="0" (
     echo No se pudo iniciar. Copia este mensaje para revisar el problema:

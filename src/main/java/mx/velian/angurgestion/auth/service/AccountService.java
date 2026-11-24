@@ -6,9 +6,8 @@ import mx.velian.angurgestion.auth.model.UserAccount;
 import java.util.List;
 
 public interface AccountService {
+    /** Legacy method retained for source compatibility; public client registration is disabled. */
     void register(RegistrationForm form);
-
-    void createAccount(AccountForm form, long administratorId);
 
     void requestVerification(String email);
 
@@ -25,4 +24,8 @@ public interface AccountService {
     List<UserAccount> accounts();
 
     void setActive(long id, boolean active, long administratorId);
+
+    boolean isPrincipal(long id);
+
+    void setPrincipal(long id, long administratorId);
 }

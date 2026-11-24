@@ -34,6 +34,7 @@
 <div class="alert alert-success" role="status" th:if="${param.registered}">Tu cuenta fue creada. Revisa tu correo y verifica la cuenta antes de entrar.</div>
 <div class="alert alert-success" role="status" th:if="${param.verified}">Tu correo quedó verificado. Ya puedes iniciar sesión.</div>
 <div class="alert alert-success" role="status" th:if="${param.passwordChanged}">Tu contraseña se actualizó. Inicia sesión con la nueva contraseña.</div>
+<div class="alert alert-success" role="status" th:if="${param.adminCreated}">Tu cuenta de administrador quedó creada. Ya puedes iniciar sesión.</div>
         <form th:action="@{/login}" method="post" class="login-form">
             <div class="mb-4">
                 <label class="form-label" for="identifier">Usuario o correo</label>
@@ -47,9 +48,9 @@
             <button class="btn btn-angur-login w-100" type="submit">Iniciar sesión</button>
         </form>
 
-        <nav class="auth-links" aria-label="Opciones de acceso"><a th:href="@{/recuperar-acceso}">Recuperar acceso</a><a th:href="@{/registro}">Crear cuenta de cliente</a></nav>
+        <nav class="auth-links" aria-label="Opciones de acceso"><a th:href="@{/recuperar-acceso}">Recuperar acceso</a></nav>
         <p class="login-footer">Primera instalación: <a th:href="@{/setup}">configurar el administrador inicial</a> (solo cuando la base no tiene cuentas).</p>
-        <p class="login-footer">Para crear administradores adicionales, inicia sesión con una cuenta administradora y usa <strong>Usuarios → Crear cuenta</strong>.</p>
+        <p class="login-footer">Solo las cuentas administradoras pueden iniciar sesión en esta versión.</p>
     </section>
 </main>
 <script th:src="@{/vendor/bootstrap/bootstrap.bundle.min.js}"

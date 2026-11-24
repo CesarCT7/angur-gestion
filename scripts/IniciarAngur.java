@@ -193,7 +193,7 @@ class IniciarAngur {
                 try (Connection connection =
                         driver.connect(
                                 env.getOrDefault(
-                                        "DB_URL", "jdbc:mysql://localhost:3306/angur_gestion"),
+                                        "DB_URL", "jdbc:mysql://localhost:3306/angur_gestion_admin"),
                                 settings)) {
                     if (connection == null)
                         throw new IllegalStateException("DB_URL no es una dirección MySQL válida.");
@@ -213,17 +213,25 @@ class IniciarAngur {
                         throw new IllegalStateException(
                                 "faltan las tablas. Ejecuta src/main/resources/db/schema.sql en"
                                     + " MySQL Workbench.");
-                    if (!tables.containsAll(Set.of("auth_setup", "auth_tokens")))
+                    if (!tables.containsAll(Set.of("auth_setup", "auth_tokens", "solicitudes_admin", "auditoria_eventos")))
                         throw new IllegalStateException(
-                                "la base es anterior. Respalda y aplica"
-                                    + " src/main/resources/db/migrations/001-autenticacion-web.sql.");
+                                "la base es anterior. Respalda y aplica las migraciones pendientes"
+                                    + " de src/main/resources/db/migrations en orden.");
                     try (Statement st = connection.createStatement()) {
                         st.executeQuery(
                                         "SELECT correo_verificado,version_sesion FROM usuarios"
                                             + " LIMIT 1")
                                 .close();
+                        st.executeQuery("SELECT administrador_principal_id FROM auth_setup WHERE id=1").close();
                     }
-                    System.out.println("MySQL: conexión y esquema de autenticación comprobados.");
+                    try (ResultSet column = connection.getMetaData().getColumns(
+                            connection.getCatalog(), null, "cotizaciones", "cliente_id")) {
+                        if (!column.next() || column.getInt("NULLABLE") != DatabaseMetaData.columnNullable)
+                            throw new IllegalStateException(
+                                    "para cotizar sin cliente, aplica la migración "
+                                    + "007-cotizaciones-sin-cliente.sql a la base administrativa.");
+                    }
+                    System.out.println("MySQL: conexión y esquema administrativo comprobados.");
                 } catch (SQLException error) {
                     if (error.getErrorCode() == 1045 || "28000".equals(error.getSQLState()))
                         throw new IllegalStateException(
@@ -231,7 +239,7 @@ class IniciarAngur {
                                     + " .env y las variables de la terminal que las reemplacen.");
                     if (error.getErrorCode() == 1049)
                         throw new IllegalStateException(
-                                "la base de DB_URL no existe. Crea angur_gestion ejecutando"
+                                "la base de DB_URL no existe. Crea angur_gestion_admin ejecutando"
                                     + " src/main/resources/db/schema.sql.");
                     if (error.getErrorCode() == 1054)
                         throw new IllegalStateException(
@@ -251,7 +259,7 @@ class IniciarAngur {
         if (!docker) return;
         URI db =
                 URI.create(
-                        env.getOrDefault("DB_URL", "jdbc:mysql://localhost:3306/angur_gestion")
+                        env.getOrDefault("DB_URL", "jdbc:mysql://localhost:3306/angur_gestion_admin")
                                 .substring(5));
         if (!local(db)) return;
         List<String> names = new ArrayList<>();

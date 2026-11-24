@@ -1,6 +1,6 @@
 -- Respaldar la base y ejecutar una sola vez para habilitar el borrado definitivo
 -- de productos archivados sin perder partidas ni movimientos historicos.
-USE angur_gestion;
+USE angur_gestion_admin;
 
 ALTER TABLE movimientos_inventario
     ADD COLUMN codigo_producto VARCHAR(80) NULL AFTER producto_id,

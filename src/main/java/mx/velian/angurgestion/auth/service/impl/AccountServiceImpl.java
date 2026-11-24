@@ -7,6 +7,7 @@ import mx.velian.angurgestion.auth.dao.*;
 import mx.velian.angurgestion.auth.dto.*;
 import mx.velian.angurgestion.auth.model.*;
 import mx.velian.angurgestion.auth.service.AccountService;
+import mx.velian.angurgestion.audit.service.AuditTrail;
 
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -28,6 +29,7 @@ public class AccountServiceImpl implements AccountService {
     private final AuthProperties properties;
     private final Clock clock;
     private final Validator validator;
+    private final AuditTrail audit;
     private final SecureRandom random = new SecureRandom();
 
     public AccountServiceImpl(
@@ -37,7 +39,8 @@ public class AccountServiceImpl implements AccountService {
             AuthMailService mail,
             AuthProperties properties,
             Clock clock,
-            Validator validator) {
+            Validator validator,
+            AuditTrail audit) {
         this.users = users;
         this.tokens = tokens;
         this.encoder = encoder;
@@ -45,6 +48,7 @@ public class AccountServiceImpl implements AccountService {
         this.properties = properties;
         this.clock = clock;
         this.validator = validator;
+        this.audit=audit;
     }
 
     private void validate(InitialAdminForm form) {
@@ -53,20 +57,9 @@ public class AccountServiceImpl implements AccountService {
             throw new AuthOperationException("Revisa los datos y la confirmación de contraseña.");
     }
 
-    @Transactional
+    @Override
     public void register(RegistrationForm form) {
-        validate(form);
-        if (users.countUsers() == 0)
-            throw new AuthOperationException(
-                    "La administración debe completar primero la configuración inicial.");
-        create(form, UserRole.CLIENTE, null);
-    }
-
-    @Transactional
-    public void createAccount(AccountForm form, long administratorId) {
-        validate(form);
-        requireAdministrator(administratorId);
-        create(form, form.getRole(), administratorId);
+        throw new AuthOperationException("El registro de clientes no está disponible en esta versión.");
     }
 
     private void requireAdministrator(long id) {
@@ -82,30 +75,6 @@ public class AccountServiceImpl implements AccountService {
         return new AuthOperationException(
                 "No pudimos crear la cuenta con esos datos. Prueba otro usuario o recupera tu"
                     + " cuenta si ya estás registrado.");
-    }
-
-    private void create(RegistrationForm form, UserRole role, Long author) {
-        if (users.existsByUsernameOrEmail(form.getUsername(), form.getEmail())) throw duplicate();
-        try {
-            long id =
-                    users.create(
-                            form.getUsername(),
-                            form.getEmail(),
-                            form.getName(),
-                            encoder.encode(form.getPassword()),
-                            role,
-                            false);
-            if (role == UserRole.CLIENTE)
-                users.createClient(
-                        id,
-                        form.getClientType().name(),
-                        form.getName(),
-                        form.getEmail(),
-                        author == null ? id : author);
-            issue(users.findById(id).orElseThrow(), VERIFY);
-        } catch (DuplicateKeyException error) {
-            throw duplicate();
-        }
     }
 
     @Transactional
@@ -223,6 +192,7 @@ public class AccountServiceImpl implements AccountService {
         UserAccount user = lockValidToken(raw, VERIFY);
         users.verifyEmail(user.id());
         tokens.invalidate(user.id(), VERIFY, clock.instant());
+        audit.record(user.id(),"CUENTA",Long.toString(user.id()),"VERIFICAR_CORREO","La cuenta confirmó su correo electrónico.");
     }
 
     @Transactional
@@ -233,10 +203,25 @@ public class AccountServiceImpl implements AccountService {
         UserAccount user = lockValidToken(form.getToken(), RESET);
         users.changePassword(user.id(), encoder.encode(form.getPassword()));
         tokens.invalidate(user.id(), RESET, clock.instant());
+        audit.record(user.id(),"CUENTA",Long.toString(user.id()),"CAMBIAR_CLAVE","Se actualizó la contraseña desde recuperación de acceso.");
     }
 
     public List<UserAccount> accounts() {
-        return users.findAll();
+        return users.findAll().stream().filter(u -> u.role() == UserRole.ADMINISTRADOR).toList();
+    }
+
+    public boolean isPrincipal(long id) { return users.isPrincipalAdministrator(id); }
+
+    @Transactional
+    public void setPrincipal(long id, long administratorId) {
+        users.lockSetup();
+        requireAdministrator(administratorId);
+        if (!users.isPrincipalAdministrator(administratorId))
+            throw new AuthOperationException("Solo el administrador principal puede transferir ese control.");
+        UserAccount target = users.lockById(id).filter(u -> u.active() && u.emailVerified() && u.role()==UserRole.ADMINISTRADOR)
+                .orElseThrow(() -> new AuthOperationException("El administrador elegido debe estar activo y tener el correo verificado."));
+        users.setPrincipalAdministrator(target.id());
+        audit.record(administratorId,"CUENTA",Long.toString(target.id()),"DESIGNAR_PRINCIPAL","Se designó el administrador principal de la instalación.");
     }
 
     @Transactional
@@ -246,6 +231,8 @@ public class AccountServiceImpl implements AccountService {
         UserAccount user =
                 users.lockById(id)
                         .orElseThrow(() -> new AuthOperationException("No se encontró la cuenta."));
+        if (!active && users.isPrincipalAdministrator(id))
+            throw new AuthOperationException("Transfiere el puesto de administrador principal antes de desactivar esta cuenta.");
         if (!active && id == administratorId)
             throw new AuthOperationException("No puedes desactivar tu propia cuenta.");
         if (!active
@@ -263,5 +250,6 @@ public class AccountServiceImpl implements AccountService {
         users.setActive(id, active);
         tokens.invalidate(id, RESET, clock.instant());
         tokens.invalidate(id, VERIFY, clock.instant());
+        audit.record(administratorId,"CUENTA",Long.toString(id),active?"ACTIVAR":"DESACTIVAR",active?"Se activó una cuenta administradora.":"Se desactivó una cuenta administradora.");
     }
 }

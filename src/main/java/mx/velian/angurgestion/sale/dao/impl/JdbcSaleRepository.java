@@ -28,7 +28,7 @@ import mx.velian.angurgestion.sale.model.SaleSummary;
 public class JdbcSaleRepository implements SaleRepository {
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
     private static final String SALE_SELECT = """
-            SELECT v.id, v.cliente_id, c.nombre_razon_social AS cliente, c.usuario_id AS cliente_usuario_id,
+            SELECT v.id, v.cliente_id, COALESCE(c.nombre_razon_social, 'Sin cliente') AS cliente,
                    v.cotizacion_id, v.vendedor_id, u.nombre AS vendedor, v.estado, v.fecha, v.total
             FROM ventas v
             LEFT JOIN clientes c ON c.id = v.cliente_id
@@ -41,7 +41,7 @@ public class JdbcSaleRepository implements SaleRepository {
     @Override
     public List<SaleSummary> findAll(String search, SaleStatus status, UserRole role, long userId) {
         StringBuilder sql = new StringBuilder("""
-                SELECT v.id, v.fecha, c.nombre_razon_social AS cliente, u.nombre AS vendedor,
+                SELECT v.id, v.fecha, COALESCE(c.nombre_razon_social, 'Sin cliente') AS cliente, u.nombre AS vendedor,
                        v.cotizacion_id, v.estado, v.total
                 FROM ventas v
                 LEFT JOIN clientes c ON c.id = v.cliente_id
@@ -52,11 +52,11 @@ public class JdbcSaleRepository implements SaleRepository {
         addScope(sql, args, role, userId);
         String term = search == null ? "" : search.trim();
         if (!term.isEmpty()) {
-            sql.append(" AND (CAST(v.id AS CHAR) LIKE ? OR c.nombre_razon_social LIKE ? OR EXISTS (")
+            sql.append(" AND (CAST(v.id AS CHAR) LIKE ? OR EXISTS (")
                     .append("SELECT 1 FROM venta_partidas vp WHERE vp.venta_id = v.id ")
                     .append("AND (vp.codigo_producto LIKE ? OR vp.nombre_producto LIKE ?)))");
             String like = "%" + term + "%";
-            args.add(like); args.add(like); args.add(like); args.add(like);
+            args.add(like); args.add(like); args.add(like);
         }
         if (status != null) { sql.append(" AND v.estado = ?"); args.add(status.name()); }
         sql.append(" ORDER BY v.fecha DESC, v.id DESC");
@@ -173,7 +173,7 @@ public class JdbcSaleRepository implements SaleRepository {
 
     private static void addScope(StringBuilder sql, List<Object> args, UserRole role, long userId) {
         if (role == UserRole.VENDEDOR) { sql.append(" AND v.vendedor_id = ?"); args.add(userId); }
-        if (role == UserRole.CLIENTE) { sql.append(" AND c.usuario_id = ?"); args.add(userId); }
+        else if (role != UserRole.ADMINISTRADOR && role != UserRole.SUPERVISOR_VENTAS) { sql.append(" AND 1 = 0"); }
     }
 
     private static String format(ResultSet rs, String column) throws SQLException {

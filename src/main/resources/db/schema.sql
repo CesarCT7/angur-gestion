@@ -2,11 +2,11 @@
 -- Ejecutar una sola vez en MySQL Workbench o con el cliente mysql.
 -- Las operaciones de negocio deben ejecutarse desde el backend dentro de transacciones.
 
-CREATE DATABASE IF NOT EXISTS angur_gestion
+CREATE DATABASE IF NOT EXISTS angur_gestion_admin
     CHARACTER SET utf8mb4
     COLLATE utf8mb4_0900_ai_ci;
 
-USE angur_gestion;
+USE angur_gestion_admin;
 
 CREATE TABLE usuarios (
     id              BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -92,7 +92,7 @@ CREATE TABLE existencias (
 
 CREATE TABLE cotizaciones (
     id              BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-    cliente_id      BIGINT UNSIGNED NOT NULL,
+    cliente_id      BIGINT UNSIGNED NULL,
     vendedor_id     BIGINT UNSIGNED NOT NULL,
     estado          ENUM(
                         'BORRADOR',
@@ -218,18 +218,91 @@ CREATE TABLE movimientos_inventario (
 CREATE TABLE auth_setup (
     id TINYINT NOT NULL PRIMARY KEY,
     completado BOOLEAN NOT NULL DEFAULT FALSE,
+    administrador_principal_id BIGINT UNSIGNED NULL,
+    CONSTRAINT fk_auth_setup_principal FOREIGN KEY (administrador_principal_id)
+        REFERENCES usuarios (id) ON UPDATE RESTRICT ON DELETE RESTRICT,
     CONSTRAINT chk_auth_setup_id CHECK (id = 1)
 ) ENGINE = InnoDB;
 INSERT INTO auth_setup (id, completado) VALUES (1, FALSE);
 CREATE TABLE auth_tokens (
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     usuario_id BIGINT UNSIGNED NOT NULL,
     token_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
     proposito ENUM('VERIFICAR_CORREO', 'RESTABLECER_CLAVE') NOT NULL,
     vence_en TIMESTAMP(6) NOT NULL,
     usado_en TIMESTAMP(6) NULL,
     creado_en TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    PRIMARY KEY (id),
     CONSTRAINT uq_auth_token_hash UNIQUE (token_hash),
     CONSTRAINT fk_auth_tokens_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE RESTRICT,
     INDEX ix_auth_tokens_usuario (usuario_id, proposito, usado_en)
 ) ENGINE = InnoDB;
+
+CREATE TABLE solicitudes_admin (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    usuario VARCHAR(80) NOT NULL,
+    correo VARCHAR(254) NOT NULL,
+    nombre VARCHAR(120) NOT NULL,
+    solicitado_por BIGINT UNSIGNED NOT NULL,
+    administrador_principal_id BIGINT UNSIGNED NOT NULL,
+    token_aprobacion_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+    token_aprobacion_vence_en TIMESTAMP(6) NOT NULL,
+    token_registro_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL,
+    token_registro_vence_en TIMESTAMP(6) NULL,
+    estado ENUM('PENDIENTE', 'APROBADA', 'RECHAZADA', 'COMPLETADA', 'VENCIDA') NOT NULL DEFAULT 'PENDIENTE',
+    cuenta_creada_id BIGINT UNSIGNED NULL,
+    creado_en TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    resuelto_en TIMESTAMP(6) NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT uq_solicitudes_admin_aprobacion UNIQUE (token_aprobacion_hash),
+    CONSTRAINT uq_solicitudes_admin_registro UNIQUE (token_registro_hash),
+    CONSTRAINT fk_solicitudes_admin_solicitante FOREIGN KEY (solicitado_por)
+        REFERENCES usuarios (id) ON UPDATE RESTRICT ON DELETE RESTRICT,
+    CONSTRAINT fk_solicitudes_admin_principal FOREIGN KEY (administrador_principal_id)
+        REFERENCES usuarios (id) ON UPDATE RESTRICT ON DELETE RESTRICT,
+    CONSTRAINT fk_solicitudes_admin_cuenta FOREIGN KEY (cuenta_creada_id)
+        REFERENCES usuarios (id) ON UPDATE RESTRICT ON DELETE RESTRICT,
+    INDEX ix_solicitudes_admin_estado_fecha (estado, creado_en),
+    INDEX ix_solicitudes_admin_correo (correo, estado)
+) ENGINE = InnoDB;
+
+-- Bitácora de cambios administrativos y operaciones que no se expresan como movimiento transaccional.
+CREATE TABLE auditoria_eventos (
+    id              BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    usuario_id      BIGINT UNSIGNED NOT NULL,
+    entidad_tipo    VARCHAR(30) NOT NULL,
+    entidad_clave   VARCHAR(100) NOT NULL,
+    accion          VARCHAR(30) NOT NULL,
+    descripcion    VARCHAR(500) NOT NULL,
+    creado_en       TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    PRIMARY KEY (id),
+    CONSTRAINT fk_auditoria_usuario FOREIGN KEY (usuario_id)
+        REFERENCES usuarios (id) ON UPDATE RESTRICT ON DELETE RESTRICT,
+    INDEX ix_auditoria_fecha (creado_en, id),
+    INDEX ix_auditoria_usuario_fecha (usuario_id, creado_en),
+    INDEX ix_auditoria_entidad (entidad_tipo, entidad_clave, creado_en)
+) ENGINE = InnoDB;
+
+-- Sesiones compartidas entre instancias (necesarias para despliegues que escalan horizontalmente).
+CREATE TABLE SPRING_SESSION (
+    PRIMARY_ID CHAR(36) NOT NULL,
+    SESSION_ID CHAR(36) NOT NULL,
+    CREATION_TIME BIGINT NOT NULL,
+    LAST_ACCESS_TIME BIGINT NOT NULL,
+    MAX_INACTIVE_INTERVAL INT NOT NULL,
+    EXPIRY_TIME BIGINT NOT NULL,
+    PRINCIPAL_NAME VARCHAR(100),
+    CONSTRAINT SPRING_SESSION_PK PRIMARY KEY (PRIMARY_ID)
+) ENGINE=InnoDB ROW_FORMAT=DYNAMIC;
+CREATE UNIQUE INDEX SPRING_SESSION_IX1 ON SPRING_SESSION (SESSION_ID);
+CREATE INDEX SPRING_SESSION_IX2 ON SPRING_SESSION (EXPIRY_TIME);
+CREATE INDEX SPRING_SESSION_IX3 ON SPRING_SESSION (PRINCIPAL_NAME);
+
+CREATE TABLE SPRING_SESSION_ATTRIBUTES (
+    SESSION_PRIMARY_ID CHAR(36) NOT NULL,
+    ATTRIBUTE_NAME VARCHAR(200) NOT NULL,
+    ATTRIBUTE_BYTES BLOB NOT NULL,
+    CONSTRAINT SPRING_SESSION_ATTRIBUTES_PK PRIMARY KEY (SESSION_PRIMARY_ID, ATTRIBUTE_NAME),
+    CONSTRAINT SPRING_SESSION_ATTRIBUTES_FK FOREIGN KEY (SESSION_PRIMARY_ID)
+        REFERENCES SPRING_SESSION (PRIMARY_ID) ON DELETE CASCADE
+) ENGINE=InnoDB ROW_FORMAT=DYNAMIC;

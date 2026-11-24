@@ -22,15 +22,10 @@ public class DashboardController {
     public String home(@AuthenticationPrincipal AngurUserDetails user, Model model) {
         model.addAttribute("pageTitle", "Inicio");
         model.addAttribute("activePage", "inicio");
-        model.addAttribute("isClient", user.getRole() == UserRole.CLIENTE);
         model.addAttribute("showFinancials", user.getRole() == UserRole.ADMINISTRADOR
                 || user.getRole() == UserRole.SUPERVISOR_VENTAS);
         model.addAttribute("showMovements", user.getRole() == UserRole.ADMINISTRADOR
                 || user.getRole() == UserRole.ENCARGADO_ALMACEN);
-        if (user.getRole() == UserRole.CLIENTE) {
-            return "client/home";
-        }
-
         try {
             model.addAttribute("summary", dashboardService.summarize(user.getRole()));
         } catch (DataAccessException exception) {

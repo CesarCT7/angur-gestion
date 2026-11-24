@@ -13,7 +13,7 @@
                     <h1>Inicio</h1>
                     <p class="page-subtitle">Consulta la información que corresponde a tu perfil.</p>
                 </div>
-                <a class="btn btn-angur-primary" th:if="${signedInRoleCode != 'CLIENTE'}" th:href="@{/productos}">Ver productos</a>
+                <a class="btn btn-angur-primary" th:href="@{/productos}">Ver productos</a>
             </section>
 
             <div class="alert alert-warning" role="alert" th:if="${databaseError}" th:text="${databaseError}"></div>
@@ -86,7 +86,7 @@
                 <div class="welcome-copy">
                     <p class="eyebrow">Angur Display</p>
                     <h2>Un solo lugar para organizar la operación.</h2>
-                    <p>El catálogo ya está listo para empezar. Los módulos de inventario, clientes, cotizaciones y ventas se incorporarán en las siguientes etapas.</p>
+                    <p>Consulta el catálogo y las existencias antes de preparar una cotización o registrar una venta.</p>
                     <a class="text-link" th:href="@{/productos}">Abrir catálogo de productos <span aria-hidden="true">→</span></a>
                 </div>
                 <div class="welcome-stat" aria-hidden="true"><span>AG</span></div>

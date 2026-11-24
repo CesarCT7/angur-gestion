@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import mx.velian.angurgestion.auth.dao.UserRepository;
 import mx.velian.angurgestion.auth.model.AngurUserDetails;
+import mx.velian.angurgestion.auth.model.UserRole;
 
 @Service
 public class DatabaseUserDetailsService implements UserDetailsService {
@@ -19,6 +20,7 @@ public class DatabaseUserDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String identifier) throws UsernameNotFoundException {
         return userRepository.findByIdentifier(identifier)
+                .filter(user -> user.role() == UserRole.ADMINISTRADOR)
                 .map(AngurUserDetails::new)
                 .orElseThrow(() -> new UsernameNotFoundException("Credenciales no válidas"));
     }
